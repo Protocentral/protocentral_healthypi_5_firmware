@@ -23,9 +23,9 @@ HealthyPi 5 is the latest evolution of the HealthyPi series. It is a robust, fea
 
 This repository contains only the firmware for the HealthyPi 5 system. If you're looking for the hardware design files, they're located in their own repository [here](https://github.com/Protocentral/protocentral_healthypi_5).
 
-* rp2040 - Arduino firmware source code for the RP2040 main microcontroller
-* esp32 - Arduino firmware source code for the ESP32 module
-* test_programs - Test programs used during the development for testing the hardware
+* _/rp2040_ - Arduino firmware source code for the RP2040 main microcontroller
+* _/esp32_ - Arduino firmware source code for the ESP32 module
+* _/test_programs_ - Test programs used during the development for testing the hardware
 
 ## License Information
 
