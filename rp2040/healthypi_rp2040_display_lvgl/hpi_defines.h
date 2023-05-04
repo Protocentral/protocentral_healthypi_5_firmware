@@ -30,8 +30,8 @@
 
 #define SD_CS_PIN 16
 
-#define   TFT_BKL_LITE    16  // Backlight control pin
-#define   SD_CS_DISPLAY   TFT_BKL_LITE  // Backlight PWM pin
+#define TFT_BKL_LITE 16            // Backlight control pin
+#define SD_CS_DISPLAY TFT_BKL_LITE // Backlight PWM pin
 
 // Packet format for communication with OpenView
 
@@ -46,26 +46,24 @@
 
 #define PPG_DATA 0X00
 
-#define MAX30205_ADDRESS1        0x49  // 8bit address converted to 7bit
-#define MAX30205_ADDRESS2        0x48  // 8bit address converted to 7bit
+#define MAX30205_ADDRESS1 0x49 // 8bit address converted to 7bit
+#define MAX30205_ADDRESS2 0x48 // 8bit address converted to 7bit
 
 // Registers
-#define MAX30205_TEMPERATURE    0x00  //  get temperature ,Read only
-#define MAX30205_CONFIGURATION  0x01  //
-#define MAX30205_THYST          0x02  //
-#define MAX30205_TOS            0x03  //
+#define MAX30205_TEMPERATURE 0x00   //  get temperature ,Read only
+#define MAX30205_CONFIGURATION 0x01 //
+#define MAX30205_THYST 0x02         //
+#define MAX30205_TOS 0x03           //
 
 #define DISP_WINDOW_SIZE 512 // SAMPLE_RATE * 4
 
-//Following pins are used for the display and defined in the User_Setup.h file
-//#define TFT_MISO -1
-//#define TFT_MOSI 11
-//#define TFT_SCLK 10
-//#define TFT_CS   29  // Chip select control pin
-//#define TFT_DC   23  // Data Command control pin
-//#define TFT_RST  8  // Reset pin (could connect to RST pin)
-
-
+// Following pins are used for the display and defined in the User_Setup.h file
+// #define TFT_MISO -1
+// #define TFT_MOSI 11
+// #define TFT_SCLK 10
+// #define TFT_CS   29  // Chip select control pin
+// #define TFT_DC   23  // Data Command control pin
+// #define TFT_RST  8  // Reset pin (could connect to RST pin)
 
 enum hpi_scr_t
 {

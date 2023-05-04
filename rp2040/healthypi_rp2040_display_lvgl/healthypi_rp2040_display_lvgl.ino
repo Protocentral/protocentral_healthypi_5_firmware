@@ -317,24 +317,11 @@ void loop()
 
   // float val = tla2022.read_adc(); // +/- 2.048 V FSR, 1 LSB = 1 mV
   // Serial.println(val);
+
   // Check to see if data is ready with .dataAvailable()
   if (ccsSensor.dataAvailable())
   {
-    // If so, have the sensor read and calculate the results.
-    // Get them later
     ccsSensor.readAlgorithmResults();
-
-    Serial.print("CO2[");
-    // Returns calculated CO2 reading
-    // Serial.print(ccsSensor.getCO2());
-    Serial.print("] tVOC[");
-    // Returns calculated TVOC reading
-    // Serial.print(ccsSensor.getTVOC());
-    // Serial.print("] millis[");
-    // Display the time since program start
-    // Serial.print(millis());
-    // Serial.print("]");
-    // Serial.println();
 
     hpi_display.updateEnv(ccsSensor.getCO2(), ccsSensor.getTVOC());
   }

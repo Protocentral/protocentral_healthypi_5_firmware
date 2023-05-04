@@ -8,13 +8,12 @@ void lv_indev_init(void);
 void my_disp_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p);
 void menu_event_handler(lv_event_t *e);
 void get_screen(enum hpi_scr_t get_scr);
- void draw_header(lv_obj_t *parent);
-    void draw_footer(lv_obj_t *parent);
+void draw_header(lv_obj_t *parent);
+void draw_footer(lv_obj_t *parent);
 
 class HealthyPi_Display
 {
 private:
-   
 public:
     void init();
     void draw_plotECG(float *data_ecg, int num_samples);
@@ -30,8 +29,6 @@ public:
     void updateSpO2(uint8_t spo2, bool spo2_ok);
     void updateHR(uint8_t hr);
 
-    
-    
     void do_set_scale();
 };
 
