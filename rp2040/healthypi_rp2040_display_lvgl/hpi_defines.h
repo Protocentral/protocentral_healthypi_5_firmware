@@ -1,4 +1,6 @@
 // HealthyPi 5.2 Pin definitions for RP2040
+#ifndef __HPI_DEFS_H__
+#define __HPI_DEFS_H__
 
 #define SPI_SCK_PIN 2
 #define SPI_MOSI_PIN 3
@@ -53,6 +55,8 @@
 #define MAX30205_THYST          0x02  //
 #define MAX30205_TOS            0x03  //
 
+#define DISP_WINDOW_SIZE 512 // SAMPLE_RATE * 4
+
 //Following pins are used for the display and defined in the User_Setup.h file
 //#define TFT_MISO -1
 //#define TFT_MOSI 11
@@ -71,3 +75,5 @@ enum hpi_scr_t
   SCR_CHARTS_PPG,
   SCR_CHARTS_RESP
 };
+
+#endif // __HPI_DEFS_H__
