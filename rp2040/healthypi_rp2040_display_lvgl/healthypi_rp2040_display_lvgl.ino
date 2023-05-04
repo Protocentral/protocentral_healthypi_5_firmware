@@ -15,7 +15,7 @@
 
 #include <SPI.h>
 #include <Wire.h>
-//#include <SD.h>
+// #include <SD.h>
 
 #include "src/lvgl/lvgl.h"
 #include <TFT_eSPI.h>
@@ -24,8 +24,19 @@
 #include "Protocentral_spo2_algorithm.h"
 #include <protocentral_max30001.h>
 
+// Qwiic Sensor includes
+#include <protocentral_TLA20xx.h>
+#include "SparkFunCCS811.h"
+
 #include "images.h"
 #include "hpi_defines.h"
+
+// Qwiic Sensors
+#define TLA20XX_I2C_ADDR 0x49
+#define CCS811_ADDR 0x5B //Default I2C Address
+
+TLA20XX tla2022(TLA20XX_I2C_ADDR);
+CCS811 ccsSensor(CCS811_ADDR);
 
 void send_data_serial_port(void);
 
@@ -84,6 +95,8 @@ lv_obj_t *label_spo2;
 lv_obj_t *label_rr;
 lv_obj_t *label_temp;
 
+lv_obj_t *label_co2_voc;
+
 // LVGL GUI Screens
 lv_obj_t *scr_main_menu;
 lv_obj_t *scr_charts_all;
@@ -91,6 +104,8 @@ lv_obj_t *scr_charts_all;
 lv_obj_t *scr_charts_ecg;
 lv_obj_t *scr_charts_ppg;
 lv_obj_t *scr_charts_resp;
+
+
 
 float respPlot = 0;
 float redPlot = 0;
@@ -188,9 +203,23 @@ void setup()
   Wire1.setSCL(7);
   Wire1.begin();
 
-  i2c_write_byte(TEMP_SENS_ADDRESS, MAX30205_CONFIGURATION, 0x00); //mode config
-  i2c_write_byte(TEMP_SENS_ADDRESS, MAX30205_THYST , 		 0x00); // set threshold
-  i2c_write_byte(TEMP_SENS_ADDRESS, MAX30205_TOS, 			 0x00); //
+  i2c_write_byte(TEMP_SENS_ADDRESS, MAX30205_CONFIGURATION, 0x00); // mode config
+  i2c_write_byte(TEMP_SENS_ADDRESS, MAX30205_THYST, 0x00);         // set threshold
+  i2c_write_byte(TEMP_SENS_ADDRESS, MAX30205_TOS, 0x00);           //
+
+  /*tla2022.begin();
+
+  tla2022.setMode(TLA20XX::OP_CONTINUOUS);
+  tla2022.setDR(TLA20XX::DR_128SPS);
+  tla2022.setFSR(TLA20XX::FSR_2_048V);
+  */
+
+  if (ccsSensor.begin(Wire1) == false)
+  {
+    Serial.print("CCS811 error. Please check wiring.");
+    //while (1)
+      //;
+  }
 
   if (hpi_ble_enabled)
   {
@@ -273,7 +302,14 @@ void updateTemp(float temp)
 {
   char temp_str[10];
   sprintf(temp_str, "%.1f", temp);
-  lv_label_set_text_fmt(label_temp,temp_str, temp);
+  lv_label_set_text_fmt(label_temp, temp_str, temp);
+}
+
+void updateEnv(int co2, int voc)
+{
+  char co2_str[14];
+  sprintf(co2_str, "CO2: %d VOC: %d", co2, voc);
+  lv_label_set_text(label_co2_voc, co2_str);
 }
 
 void draw_plotECG(float *data_ecg, int num_samples)
@@ -451,11 +487,35 @@ void loop()
     prevCountTime = currentTime;
   }
 
-  if(currentTime - prevTempCountTime >= TEMP_READ_INTERVAL)
+  if (currentTime - prevTempCountTime >= TEMP_READ_INTERVAL)
   {
     float tread = getTemperature();
     updateTemp(tread);
-    prevTempCountTime= currentTime;
+    prevTempCountTime = currentTime;
+  }
+
+  //float val = tla2022.read_adc(); // +/- 2.048 V FSR, 1 LSB = 1 mV
+  //Serial.println(val);
+  //Check to see if data is ready with .dataAvailable()
+  if (ccsSensor.dataAvailable())
+  {
+    //If so, have the sensor read and calculate the results.
+    //Get them later
+    ccsSensor.readAlgorithmResults();
+
+    Serial.print("CO2[");
+    //Returns calculated CO2 reading
+    //Serial.print(ccsSensor.getCO2());
+    Serial.print("] tVOC[");
+    //Returns calculated TVOC reading
+    //Serial.print(ccsSensor.getTVOC());
+    //Serial.print("] millis[");
+    //Display the time since program start
+    //Serial.print(millis());
+    //Serial.print("]");
+    //Serial.println();
+
+    updateEnv(ccsSensor.getCO2(), ccsSensor.getTVOC());
   }
 
   lv_timer_handler(); /* let the GUI do its work */
@@ -745,6 +805,8 @@ void draw_header(lv_obj_t *parent)
   lv_obj_align(label_symbols, LV_ALIGN_TOP_RIGHT, -5, 5);
 }
 
+
+
 void draw_footer(lv_obj_t *parent)
 {
   static lv_style_t style;
@@ -760,13 +822,18 @@ void draw_footer(lv_obj_t *parent)
   LV_IMG_DECLARE(logo_oneline);
   lv_obj_t *img1 = lv_img_create(parent);
   lv_img_set_src(img1, &logo_oneline);
-  lv_obj_align(img1, LV_ALIGN_BOTTOM_MID, 0, -10);
+  lv_obj_align(img1, LV_ALIGN_BOTTOM_MID, 10, -10);
   lv_obj_set_size(img1, 104, 10);
 
   // Label for Symbols
   lv_obj_t *label_symbols = lv_label_create(parent);
   lv_label_set_text(label_symbols, LV_SYMBOL_BATTERY_FULL " " LV_SYMBOL_BLUETOOTH);
   lv_obj_align(label_symbols, LV_ALIGN_BOTTOM_LEFT, 5, -10);
+
+  // Label for CO2 / VOC
+  label_co2_voc = lv_label_create(parent);
+  lv_label_set_text(label_co2_voc, "CO2: 400 VOC: 0");
+  lv_obj_align(label_co2_voc, LV_ALIGN_BOTTOM_LEFT, 45, -10);
 }
 
 /* LVGL Screens */
@@ -1099,7 +1166,7 @@ float getTemperature(void)
 {
   uint8_t readRaw[2] = {0};
   i2c_read_bytes(TEMP_SENS_ADDRESS, MAX30205_TEMPERATURE, &readRaw[0], 2); // read two bytes
-  int16_t raw = readRaw[0] << 8 | readRaw[1];                        // combine two bytes
+  int16_t raw = readRaw[0] << 8 | readRaw[1];                              // combine two bytes
   float temperature = raw * 0.00390625;                                    // convert to temperature
   return temperature;
 }
