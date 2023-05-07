@@ -179,7 +179,8 @@ void setup()
   afe44xx.afe44xx_init();
   delay(100);
 
-  max30001.BeginECGBioZ();
+  //max30001.BeginECGBioZ();
+  max30001.begin(true,true);
 
   hpi_display.init();
   delay(1000);
@@ -245,7 +246,12 @@ void loop()
     max30001.biozSamplesAvailable = 0;
   }
 
-  // gx++;
+  if(max30001.rrAvailable==true)
+  {
+    //hpi_display.set_rr(max30001.rr);
+    hpi_display.draw_plotRRI(max30001.RtoR_ms);
+    max30001.rrAvailable=false;
+  }
 
   // send_data_serial_port();
 
@@ -301,6 +307,8 @@ void loop()
 
     prevCountTime = currentTime;
   }
+
+  //if()
 
   if (currentTime - prevTempCountTime >= TEMP_READ_INTERVAL)
   {

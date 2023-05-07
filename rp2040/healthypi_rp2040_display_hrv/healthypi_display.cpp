@@ -676,7 +676,7 @@ void HealthyPi_Display::draw_scr_hrv(void)
     lv_chart_set_div_line_count(chart1, 0, 0);
     lv_chart_set_update_mode(chart1, LV_CHART_UPDATE_MODE_CIRCULAR);
 
-    lv_obj_set_pos(chart1, 10, 4);
+    lv_obj_set_pos(chart1, 4, 4);
 
     // Create Chart 2
     chart2 = lv_chart_create(scr_hrv);
@@ -686,7 +686,7 @@ void HealthyPi_Display::draw_scr_hrv(void)
     lv_obj_set_style_size(chart2, 0, LV_PART_INDICATOR);
     lv_chart_set_point_count(chart2, DISP_WINDOW_SIZE);
     // lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);   /*Show lines and points too*
-    lv_chart_set_range(chart2, LV_CHART_AXIS_PRIMARY_Y, -1000, 1000);
+    lv_chart_set_range(chart2, LV_CHART_AXIS_PRIMARY_Y, 100, 2000);
     // lv_chart_set_range(chart1, LV_CHART_AXIS_SECONDARY_Y, 0, 1000);
     lv_chart_set_div_line_count(chart2, 0, 0);
     lv_chart_set_update_mode(chart2, LV_CHART_UPDATE_MODE_CIRCULAR);
@@ -713,7 +713,7 @@ void HealthyPi_Display::draw_scr_hrv(void)
     // ser2 = lv_chart_add_series(chart2, lv_palette_main(LV_PALETTE_YELLOW), LV_CHART_AXIS_PRIMARY_Y);
     // ser3 = lv_chart_add_series(chart3, lv_palette_main(LV_PALETTE_BLUE), LV_CHART_AXIS_PRIMARY_Y);
 
-    ser_rri = lv_chart_add_series(chart2, lv_palette_main(LV_PALETTE_GREEN), LV_CHART_AXIS_SECONDARY_Y);
+    ser_rri = lv_chart_add_series(chart2, lv_palette_main(LV_PALETTE_GREEN), LV_CHART_AXIS_PRIMARY_Y);
     ser_poincare = lv_chart_add_series(chart3, lv_palette_main(LV_PALETTE_YELLOW), LV_CHART_AXIS_SECONDARY_Y);
 }
 
