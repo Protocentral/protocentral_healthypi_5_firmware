@@ -19,6 +19,8 @@ lv_indev_t *indev_keypad;
 static lv_obj_t *chart1;
 static lv_obj_t *chart2;
 static lv_obj_t *chart3;
+
+// Chart Series
 static lv_chart_series_t *ser1;
 static lv_chart_series_t *ser2;
 static lv_chart_series_t *ser3;
