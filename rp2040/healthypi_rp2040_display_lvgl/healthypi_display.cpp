@@ -39,13 +39,15 @@ lv_obj_t *scr_charts_ecg;
 lv_obj_t *scr_charts_ppg;
 lv_obj_t *scr_charts_resp;
 
+lv_obj_t *scr_hrv;
+
 enum hpi_scr_t hpi_current_screen = SCR_MAIN_MENU;
 
 int pos = 0;
 
 int pointCounter = 0;
 
-float y1_max = 0;
+/*float y1_max = 0;
 float y1_min = 10000;
 
 float y2_max = 0;
@@ -55,6 +57,7 @@ float y3_max = 0;
 float y3_min = 10000;
 
 static float gx = 0;
+*/
 
 #define SAMPLE_RATE 125
 
@@ -92,6 +95,8 @@ void HealthyPi_Display::init()
     //  lv_obj_set_style_text_color(lv_scr_act(),LV_COLOR_MAKE(255, 255, 255), LV_STATE_DEFAULT);
     lv_indev_init();
 
+    init_styles();
+
     // draw_main_menu();
     draw_scr_charts_all();
     // draw_scr_charts_ppg_only();
@@ -109,13 +114,13 @@ void HealthyPi_Display::do_set_scale()
     if (gx >= DISP_WINDOW_SIZE)
     {
         if (chart1_update == true)
-            // lv_chart_set_range(chart1, LV_CHART_AXIS_PRIMARY_Y, y1_min, y1_max);
-            if (chart2_update == true)
-                // lv_chart_set_range(chart2, LV_CHART_AXIS_PRIMARY_Y, y2_min, y2_max);
-                if (chart3_update == true)
-                    // lv_chart_set_range(chart3, LV_CHART_AXIS_PRIMARY_Y, y3_min, y3_max);
+            lv_chart_set_range(chart1, LV_CHART_AXIS_PRIMARY_Y, y1_min, y1_max);
+        if (chart2_update == true)
+            lv_chart_set_range(chart2, LV_CHART_AXIS_PRIMARY_Y, y2_min, y2_max);
+        if (chart3_update == true)
+            lv_chart_set_range(chart3, LV_CHART_AXIS_PRIMARY_Y, y3_min, y3_max);
 
-                    gx = 0;
+        gx = 0;
         y1_max = -100000;
         y1_min = 100000;
 
@@ -188,47 +193,47 @@ void HealthyPi_Display::draw_plotresp(float *data_resp, int num_samples)
 
 void HealthyPi_Display::updateHR(uint8_t hr)
 {
-  if (chart1_update == true)
-  {
-    lv_label_set_text_fmt(label_hr, "%d", hr);
-  }
+    if (chart1_update == true)
+    {
+        lv_label_set_text_fmt(label_hr, "%d", hr);
+    }
 }
 
 void HealthyPi_Display::updateSpO2(uint8_t spo2, bool spo2_ok)
 {
-  if (chart2_update == true)
-  {
-    if (spo2_ok == true)
+    if (chart2_update == true)
     {
-      lv_label_set_text_fmt(label_spo2, "%d", spo2);
+        if (spo2_ok == true)
+        {
+            lv_label_set_text_fmt(label_spo2, "%d", spo2);
+        }
+        else
+        {
+            lv_label_set_text_fmt(label_spo2, "--");
+        }
     }
-    else
-    {
-      lv_label_set_text_fmt(label_spo2, "--");
-    }
-  }
 }
 
 void HealthyPi_Display::updateRR(uint8_t rr)
 {
-  if (chart3_update == true)
-  {
-    lv_label_set_text_fmt(label_rr, "%d\n", rr);
-  }
+    if (chart3_update == true)
+    {
+        lv_label_set_text_fmt(label_rr, "%d\n", rr);
+    }
 }
 
 void HealthyPi_Display::updateTemp(float temp)
 {
-  char temp_str[10];
-  sprintf(temp_str, "%.1f", temp);
-  lv_label_set_text_fmt(label_temp, temp_str, temp);
+    char temp_str[10];
+    sprintf(temp_str, "%.1f", temp);
+    lv_label_set_text_fmt(label_temp, temp_str, temp);
 }
 
 void HealthyPi_Display::updateEnv(int co2, int voc)
 {
-  char co2_str[14];
-  sprintf(co2_str, "CO2: %d VOC: %d", co2, voc);
-  lv_label_set_text(label_co2_voc, co2_str);
+    char co2_str[14];
+    sprintf(co2_str, "CO2: %d VOC: %d", co2, voc);
+    lv_label_set_text(label_co2_voc, co2_str);
 }
 
 /* LVGL Common Header */
@@ -398,19 +403,49 @@ static void btn1_cb(lv_event_t *e)
     }
 }
 
+static lv_style_t style_sub;
+static lv_style_t style_hr;
+static lv_style_t style_spo2;
+static lv_style_t style_rr;
+static lv_style_t style_temp;
+static lv_style_t style_scr_back;
+
 /* LVGL Screens */
-
-// Draw all charts screen
-void HealthyPi_Display::draw_scr_charts_all(void)
+void HealthyPi_Display::init_styles()
 {
+    // Subscript (Unit) label style
+    lv_style_init(&style_sub);
+    lv_style_set_text_color(&style_sub, lv_color_white());
+    lv_style_set_text_font(&style_sub, &lv_font_montserrat_12);
 
-    static lv_style_t style;
-    lv_style_init(&style);
+    // HR Number label style
+    lv_style_init(&style_hr);
+    lv_style_set_text_color(&style_hr, lv_palette_main(LV_PALETTE_RED));
+    lv_style_set_text_font(&style_hr, &lv_font_montserrat_42);
+
+    // SpO2 label style
+    lv_style_init(&style_spo2);
+    lv_style_set_text_color(&style_spo2, lv_palette_main(LV_PALETTE_YELLOW));
+    lv_style_set_text_font(&style_spo2, &lv_font_montserrat_42);
+
+    // RR label style
+    lv_style_init(&style_rr);
+    lv_style_set_text_color(&style_rr, lv_palette_main(LV_PALETTE_BLUE));
+    lv_style_set_text_font(&style_rr, &lv_font_montserrat_42);
+
+    // SpO2 label style
+    lv_style_init(&style_temp);
+    lv_style_set_text_color(&style_temp, lv_palette_main(LV_PALETTE_LIME));
+    lv_style_set_text_font(&style_temp, &lv_font_montserrat_34);
+
+    // Screen background style
+    lv_style_init(&style_scr_back);
     // lv_style_set_radius(&style, 5);
 
     /*Make a gradient*/
-    lv_style_set_bg_opa(&style, LV_OPA_COVER);
-    lv_style_set_border_width(&style, 0);
+    lv_style_set_bg_opa(&style_scr_back, LV_OPA_COVER);
+    lv_style_set_border_width(&style_scr_back, 0);
+
     static lv_grad_dsc_t grad;
     grad.dir = LV_GRAD_DIR_HOR;
     grad.stops_count = 2;
@@ -421,13 +456,159 @@ void HealthyPi_Display::draw_scr_charts_all(void)
     grad.stops[0].frac = 128;
     grad.stops[1].frac = 192;
 
-    lv_style_set_bg_grad(&style, &grad);
+    lv_style_set_bg_grad(&style_scr_back, &grad);
+}
 
+// Draw all charts screen
+void HealthyPi_Display::draw_scr_hrv(void)
+{
+    scr_hrv = lv_obj_create(NULL);
+    draw_footer(scr_hrv);
+
+    lv_obj_add_style(scr_hrv, &style_scr_back, 0);
+
+    lv_group_t *g1 = lv_group_create();
+
+    // Create Chart 1
+    chart1 = lv_chart_create(scr_hrv);
+    lv_obj_set_size(chart1, 380, 90);
+    lv_obj_set_style_bg_color(chart1, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
+
+    lv_obj_set_style_size(chart1, 0, LV_PART_INDICATOR);
+    lv_chart_set_point_count(chart1, DISP_WINDOW_SIZE);
+    // lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);   /*Show lines and points too*
+    lv_chart_set_range(chart1, LV_CHART_AXIS_PRIMARY_Y, -200, 200);
+    // lv_chart_set_range(chart1, LV_CHART_AXIS_SECONDARY_Y, 0, 1000);
+    lv_chart_set_div_line_count(chart1, 0, 0);
+    lv_chart_set_update_mode(chart1, LV_CHART_UPDATE_MODE_CIRCULAR);
+
+    lv_obj_set_pos(chart1, 10, 4);
+
+    // Create Chart 2
+    chart2 = lv_chart_create(scr_hrv);
+    lv_obj_set_size(chart2, 380, 90);
+    lv_obj_set_style_bg_color(chart2, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
+
+    lv_obj_set_style_size(chart2, 0, LV_PART_INDICATOR);
+    lv_chart_set_point_count(chart2, DISP_WINDOW_SIZE);
+    // lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);   /*Show lines and points too*
+    lv_chart_set_range(chart2, LV_CHART_AXIS_PRIMARY_Y, -1000, 1000);
+    // lv_chart_set_range(chart1, LV_CHART_AXIS_SECONDARY_Y, 0, 1000);
+    lv_chart_set_div_line_count(chart2, 0, 0);
+    lv_chart_set_update_mode(chart2, LV_CHART_UPDATE_MODE_CIRCULAR);
+
+    lv_obj_align_to(chart2, chart1, LV_ALIGN_OUT_BOTTOM_MID, 0, 2);
+
+    // Create Chart 3
+    chart3 = lv_chart_create(scr_hrv);
+    lv_obj_set_size(chart3, 380, 90);
+    lv_obj_set_style_bg_color(chart3, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
+
+    lv_obj_set_style_size(chart3, 0, LV_PART_INDICATOR);
+    lv_chart_set_point_count(chart3, DISP_WINDOW_SIZE);
+    // lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);   /*Show lines and points too*
+    lv_chart_set_range(chart3, LV_CHART_AXIS_PRIMARY_Y, 0, 1000);
+    // lv_chart_set_range(chart1, LV_CHART_AXIS_SECONDARY_Y, 0, 1000);
+    lv_chart_set_div_line_count(chart3, 0, 0);
+    lv_chart_set_update_mode(chart3, LV_CHART_UPDATE_MODE_CIRCULAR);
+
+    lv_obj_align_to(chart3, chart2, LV_ALIGN_OUT_BOTTOM_MID, 0, 2);
+
+    /* Data Series for 3 plots*/
+    ser1 = lv_chart_add_series(chart1, lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_PRIMARY_Y);
+    ser2 = lv_chart_add_series(chart2, lv_palette_main(LV_PALETTE_YELLOW), LV_CHART_AXIS_PRIMARY_Y);
+    ser3 = lv_chart_add_series(chart3, lv_palette_main(LV_PALETTE_BLUE), LV_CHART_AXIS_PRIMARY_Y);
+
+    // HR Number label
+    label_hr = lv_label_create(scr_hrv);
+    lv_label_set_text(label_hr, "--");
+    lv_obj_align_to(label_hr, chart1, LV_ALIGN_OUT_RIGHT_MID, 8, -25);
+    lv_obj_add_style(label_hr, &style_hr, LV_STATE_DEFAULT);
+
+    // HR Title label
+    static lv_obj_t *label_hr_title = lv_label_create(scr_hrv);
+    lv_label_set_text(label_hr_title, "HR");
+    lv_obj_align_to(label_hr_title, label_hr, LV_ALIGN_TOP_MID, 0, -10);
+    lv_obj_add_style(label_hr_title, &style_sub, LV_STATE_DEFAULT);
+
+    // HR BPM Subscript label
+    static lv_obj_t *label_hr_sub = lv_label_create(scr_hrv);
+    lv_label_set_text(label_hr_sub, "bpm");
+    lv_obj_align_to(label_hr_sub, label_hr, LV_ALIGN_BOTTOM_MID, 0, 10);
+    lv_obj_add_style(label_hr_sub, &style_sub, LV_STATE_DEFAULT);
+
+    // SPO2 Number label
+    label_spo2 = lv_label_create(scr_hrv);
+    lv_label_set_text(label_spo2, "--");
+    lv_obj_align_to(label_spo2, chart2, LV_ALIGN_OUT_RIGHT_MID, 8, -25);
+    lv_obj_add_style(label_spo2, &style_spo2, LV_STATE_DEFAULT);
+
+    // SpO2 Title label
+    static lv_obj_t *label_spo2_title = lv_label_create(scr_hrv);
+    lv_label_set_text(label_spo2_title, "SpO2");
+    lv_obj_align_to(label_spo2_title, label_spo2, LV_ALIGN_TOP_MID, 0, -10);
+    lv_obj_add_style(label_spo2_title, &style_sub, LV_STATE_DEFAULT);
+
+    // SpO2 % label
+    static lv_obj_t *label_spo2_sub = lv_label_create(scr_hrv);
+    lv_label_set_text(label_spo2_sub, "%");
+    lv_obj_align_to(label_spo2_sub, label_spo2, LV_ALIGN_BOTTOM_MID, 0, 10);
+    lv_obj_add_style(label_spo2_sub, &style_sub, LV_STATE_DEFAULT);
+
+    // RR Number label
+    label_rr = lv_label_create(scr_hrv);
+    lv_label_set_text(label_rr, "--");
+    lv_obj_align_to(label_rr, chart3, LV_ALIGN_OUT_RIGHT_MID, 8, -30);
+    lv_obj_add_style(label_rr, &style_rr, LV_STATE_DEFAULT);
+
+    // RR Sub BPM label
+    static lv_obj_t *label_rr_title = lv_label_create(scr_hrv);
+    lv_label_set_text(label_rr_title, "Resp Rate");
+    lv_obj_align_to(label_rr_title, label_rr, LV_ALIGN_TOP_MID, 0, -10);
+    lv_obj_add_style(label_rr_title, &style_sub, LV_STATE_DEFAULT);
+
+    // RR Sub BPM label
+    static lv_obj_t *label_rr_sub = lv_label_create(scr_hrv);
+    lv_label_set_text(label_rr_sub, "bpm");
+    lv_obj_align_to(label_rr_sub, label_rr, LV_ALIGN_BOTTOM_MID, 0, 10);
+    lv_obj_add_style(label_rr_sub, &style_sub, LV_STATE_DEFAULT);
+
+    // Temp label
+    lv_obj_t *label_temp_title = lv_label_create(scr_hrv);
+    lv_label_set_text(label_temp_title, "Temp.");
+    lv_obj_align_to(label_temp_title, label_rr_sub, LV_ALIGN_BOTTOM_MID, 5, 25);
+    lv_obj_add_style(label_temp_title, &style_sub, LV_STATE_DEFAULT);
+
+    // Temp Number label
+    label_temp = lv_label_create(scr_hrv);
+    lv_label_set_text(label_temp, "--");
+    lv_obj_align_to(label_temp, label_temp_title, LV_ALIGN_BOTTOM_MID, -20, 10);
+    lv_obj_add_style(label_temp, &style_temp, LV_STATE_DEFAULT);
+
+    // Temp Sub deg C label
+    static lv_obj_t *label_temp_sub = lv_label_create(scr_hrv);
+    lv_label_set_text(label_temp_sub, "°C");
+    lv_obj_align_to(label_temp_sub, label_temp, LV_ALIGN_BOTTOM_MID, 0, 10);
+    lv_obj_add_style(label_temp_sub, &style_sub, LV_STATE_DEFAULT);
+
+    // draw_header(scr_hrv);
+
+    // lv_group_add_obj(g1, btn1);
+    // lv_indev_set_group(indev_keypad, g1);
+}
+
+void HealthyPi_Display::add_samples(int num_samples)
+{
+    gx+=num_samples;
+}
+
+// Draw all charts screen
+void HealthyPi_Display::draw_scr_charts_all(void)
+{
     scr_charts_all = lv_obj_create(NULL);
+    draw_footer(scr_charts_all);
 
-    lv_obj_add_style(scr_charts_all, &style, 0);
-
-    // lv_obj_set_style_bg_color(scr_charts_all, lv_color_hex(0x134f5c), LV_STATE_DEFAULT);
+    lv_obj_add_style(scr_charts_all, &style_scr_back, 0);
 
     lv_group_t *g1 = lv_group_create();
 
@@ -492,18 +673,6 @@ void HealthyPi_Display::draw_scr_charts_all(void)
     lv_obj_center(label);
     */
 
-    // Subscript (Unit) label style
-    static lv_style_t style_sub;
-    lv_style_init(&style_sub);
-    lv_style_set_text_color(&style_sub, lv_color_white());
-    lv_style_set_text_font(&style_sub, &lv_font_montserrat_12);
-
-    // HR Number label style
-    static lv_style_t style_hr;
-    lv_style_init(&style_hr);
-    lv_style_set_text_color(&style_hr, lv_palette_main(LV_PALETTE_RED));
-    lv_style_set_text_font(&style_hr, &lv_font_montserrat_42);
-
     // HR Number label
     label_hr = lv_label_create(scr_charts_all);
     lv_label_set_text(label_hr, "--");
@@ -522,12 +691,6 @@ void HealthyPi_Display::draw_scr_charts_all(void)
     lv_obj_align_to(label_hr_sub, label_hr, LV_ALIGN_BOTTOM_MID, 0, 10);
     lv_obj_add_style(label_hr_sub, &style_sub, LV_STATE_DEFAULT);
 
-    // SpO2 label style
-    static lv_style_t style_spo2;
-    lv_style_init(&style_spo2);
-    lv_style_set_text_color(&style_spo2, lv_palette_main(LV_PALETTE_YELLOW));
-    lv_style_set_text_font(&style_spo2, &lv_font_montserrat_42);
-
     // SPO2 Number label
     label_spo2 = lv_label_create(scr_charts_all);
     lv_label_set_text(label_spo2, "--");
@@ -545,12 +708,6 @@ void HealthyPi_Display::draw_scr_charts_all(void)
     lv_label_set_text(label_spo2_sub, "%");
     lv_obj_align_to(label_spo2_sub, label_spo2, LV_ALIGN_BOTTOM_MID, 0, 10);
     lv_obj_add_style(label_spo2_sub, &style_sub, LV_STATE_DEFAULT);
-
-    // RR label style
-    static lv_style_t style_rr;
-    lv_style_init(&style_rr);
-    lv_style_set_text_color(&style_rr, lv_palette_main(LV_PALETTE_BLUE));
-    lv_style_set_text_font(&style_rr, &lv_font_montserrat_42);
 
     // RR Number label
     label_rr = lv_label_create(scr_charts_all);
@@ -576,12 +733,6 @@ void HealthyPi_Display::draw_scr_charts_all(void)
     lv_obj_align_to(label_temp_title, label_rr_sub, LV_ALIGN_BOTTOM_MID, 5, 25);
     lv_obj_add_style(label_temp_title, &style_sub, LV_STATE_DEFAULT);
 
-    // SpO2 label style
-    static lv_style_t style_temp;
-    lv_style_init(&style_temp);
-    lv_style_set_text_color(&style_temp, lv_palette_main(LV_PALETTE_LIME));
-    lv_style_set_text_font(&style_temp, &lv_font_montserrat_34);
-
     // Temp Number label
     label_temp = lv_label_create(scr_charts_all);
     lv_label_set_text(label_temp, "--");
@@ -595,7 +746,6 @@ void HealthyPi_Display::draw_scr_charts_all(void)
     lv_obj_add_style(label_temp_sub, &style_sub, LV_STATE_DEFAULT);
 
     // draw_header(scr_charts_all);
-    draw_footer(scr_charts_all);
 
     // lv_group_add_obj(g1, btn1);
     // lv_indev_set_group(indev_keypad, g1);

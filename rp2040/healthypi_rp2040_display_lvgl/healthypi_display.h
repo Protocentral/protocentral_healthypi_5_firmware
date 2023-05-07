@@ -14,12 +14,26 @@ void draw_footer(lv_obj_t *parent);
 class HealthyPi_Display
 {
 private:
+    float y1_max = 0;
+    float y1_min = 10000;
+
+    float y2_max = 0;
+    float y2_min = 10000;
+
+    float y3_max = 0;
+    float y3_min = 10000;
+
+    float gx = 0;
+
+    void init_styles(void);
+
 public:
     void init();
     void draw_plotECG(float *data_ecg, int num_samples);
     void draw_plotresp(float *data_resp, int num_samples);
     void draw_plotppg(float data_ppg);
     void draw_main_menu(void);
+    void draw_scr_hrv(void);
 
     void draw_scr_charts_all(void);
 
@@ -30,6 +44,7 @@ public:
     void updateHR(uint8_t hr);
 
     void do_set_scale();
+    void add_samples(int num_samples);
 };
 
 #endif // __HPI_DISP_H__

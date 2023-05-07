@@ -140,11 +140,13 @@ void setup()
   SPI.setRX(SPI_MISO_PIN);
   SPI.setTX(SPI_MOSI_PIN);
   SPI.setSCK(SPI_SCK_PIN);
+
   SPI.begin();
 
   // Configure I2C pins for Temperature sensor/QWIIC ports
   Wire1.setSDA(6);
   Wire1.setSCL(7);
+
   Wire1.begin();
 
   i2c_write_byte(TEMP_SENS_ADDRESS, MAX30205_CONFIGURATION, 0x00); // mode config
@@ -213,7 +215,7 @@ void loop()
   unsigned long currentTime = millis();
 
   max30001.max30001ServiceAllInterrupts();
-  if (max30001.ecgSamplesAvailable > 0)
+  if(true) //(max30001.ecgSamplesAvailable > 0)
   {
     for (int i = 0; i < max30001.ecgSamplesAvailable; i++)
     {
@@ -228,6 +230,7 @@ void loop()
     // draw_plotECG(fltECGSamples, max30001.ecgSamplesAvailable);
     hpi_display.draw_plotECG(fltECGSamples, max30001.ecgSamplesAvailable);
 
+    hpi_display.add_samples(max30001.ecgSamplesAvailable);
     // gx += max30001.ecgSamplesAvailable;
     max30001.ecgSamplesAvailable = 0;
   }
@@ -325,6 +328,8 @@ void loop()
 
     hpi_display.updateEnv(ccsSensor.getCO2(), ccsSensor.getTVOC());
   }
+
+  hpi_display.do_set_scale();
 
   lv_timer_handler(); /* let the GUI do its work */
 
