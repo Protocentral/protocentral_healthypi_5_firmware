@@ -34,6 +34,8 @@ lv_obj_t *label_spo2;
 lv_obj_t *label_rr;
 lv_obj_t *label_temp;
 
+lv_obj_t *label_RRI_number;
+
 lv_obj_t *label_co2_voc;
 
 // LVGL GUI Screens
@@ -110,10 +112,10 @@ void HealthyPi_Display::do_set_scale()
     {
         if (chart1_update == true)
             lv_chart_set_range(chart1, LV_CHART_AXIS_PRIMARY_Y, y1_min, y1_max);
-        if (chart2_update == true)
-            lv_chart_set_range(chart2, LV_CHART_AXIS_PRIMARY_Y, y2_min, y2_max);
-        if (chart3_update == true)
-            lv_chart_set_range(chart3, LV_CHART_AXIS_PRIMARY_Y, y3_min, y3_max);
+        //if (chart2_update == true)
+        //    lv_chart_set_range(chart2, LV_CHART_AXIS_PRIMARY_Y, y2_min, y2_max);
+        //if (chart3_update == true)
+        //    lv_chart_set_range(chart3, LV_CHART_AXIS_PRIMARY_Y, y3_min, y3_max);
 
         gx = 0;
         y1_max = -100000;
@@ -152,39 +154,43 @@ void HealthyPi_Display::draw_plotRRI(float data_rri)
 {
     if (chart2_update == true)
     {
-
-        if (data_rri < y1_min)
+        if (data_rri < y2_min)
         {
-            y1_min = data_rri;
+            y2_min = data_rri;
         }
 
-        if (data_rri > y1_max)
+        if (data_rri > y2_max)
         {
-            y1_max = data_rri;
+            y2_max = data_rri;
         }
-
         lv_chart_set_next_value(chart2, ser_rri, data_rri);
+
+        lv_chart_set_next_value2(chart3, ser_poincare, rri_prev, data_rri);
+        char str[10];
+        sprintf(str, "X:%d Y:%d\n", (int)rri_prev, (int)data_rri);
+        Serial.print(str);
+        rri_prev = data_rri;
+        //char str[10];
+        sprintf(str, "%d", (int)data_rri);
+        lv_label_set_text(label_RRI_number, str);
     }
 }
 
-void HealthyPi_Display::draw_plot_poincare(float *data_ecg, int num_samples)
+void HealthyPi_Display::draw_plot_poincare(float x, float y)
 {
-    if (chart1_update == true)
+    if (chart3_update == true)
     {
-        for (int i = 0; i < num_samples; i++)
+
+        if (y < y1_min)
         {
-            if (data_ecg[i] < y1_min)
-            {
-                y1_min = data_ecg[i];
-            }
-
-            if (data_ecg[i] > y1_max)
-            {
-                y1_max = data_ecg[i];
-            }
-
-            lv_chart_set_next_value(chart1, ser1, data_ecg[i]);
+            y1_min = y;
         }
+
+        if (y > y1_max)
+        {
+            y1_max = y;
+        }
+        lv_chart_set_next_value(chart1, ser1, y);
     }
 }
 
@@ -535,7 +541,7 @@ void HealthyPi_Display::draw_scr_charts_all(void)
     lv_obj_set_style_bg_color(chart2, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
 
     lv_obj_set_style_size(chart2, 0, LV_PART_INDICATOR);
-    lv_chart_set_point_count(chart2, DISP_WINDOW_SIZE);
+    lv_chart_set_point_count(chart2, DISP_WINDOW_SIZE / 2);
     // lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);   /*Show lines and points too*
     lv_chart_set_range(chart2, LV_CHART_AXIS_PRIMARY_Y, -1000, 1000);
     // lv_chart_set_range(chart1, LV_CHART_AXIS_SECONDARY_Y, 0, 1000);
@@ -550,7 +556,7 @@ void HealthyPi_Display::draw_scr_charts_all(void)
     lv_obj_set_style_bg_color(chart3, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
 
     lv_obj_set_style_size(chart3, 0, LV_PART_INDICATOR);
-    lv_chart_set_point_count(chart3, DISP_WINDOW_SIZE);
+    lv_chart_set_point_count(chart3, 128);
     // lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);   /*Show lines and points too*
     lv_chart_set_range(chart3, LV_CHART_AXIS_PRIMARY_Y, 0, 1000);
     // lv_chart_set_range(chart1, LV_CHART_AXIS_SECONDARY_Y, 0, 1000);
@@ -680,33 +686,53 @@ void HealthyPi_Display::draw_scr_hrv(void)
 
     // Create Chart 2
     chart2 = lv_chart_create(scr_hrv);
-    lv_obj_set_size(chart2, 230, 100);
+    lv_obj_set_size(chart2, 200, 100);
     lv_obj_set_style_bg_color(chart2, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
 
-    lv_obj_set_style_size(chart2, 0, LV_PART_INDICATOR);
-    lv_chart_set_point_count(chart2, DISP_WINDOW_SIZE);
-    // lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);   /*Show lines and points too*
-    lv_chart_set_range(chart2, LV_CHART_AXIS_PRIMARY_Y, 100, 2000);
+    // lv_obj_set_style_size(chart2, 0, LV_PART_INDICATOR);
+    lv_chart_set_point_count(chart2, (DISP_WINDOW_SIZE / 4));
+    // lv_obj_set_style_line_width(chart2, 0, LV_PART_ITEMS); /*Remove the lines*/
+    //  lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);   /*Show lines and points too*
+    lv_chart_set_range(chart2, LV_CHART_AXIS_PRIMARY_Y, 300, 2000);
     // lv_chart_set_range(chart1, LV_CHART_AXIS_SECONDARY_Y, 0, 1000);
     lv_chart_set_div_line_count(chart2, 0, 0);
     lv_chart_set_update_mode(chart2, LV_CHART_UPDATE_MODE_CIRCULAR);
+    lv_chart_set_axis_tick(chart2, LV_CHART_AXIS_PRIMARY_Y, 5, 5, 5, 1, true, 60);
 
-    lv_obj_align_to(chart2, chart1, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 5);
+    lv_obj_align_to(chart2, chart1, LV_ALIGN_OUT_BOTTOM_LEFT, 35, 5);
 
     // Create Chart 3
     chart3 = lv_chart_create(scr_hrv);
     lv_obj_set_size(chart3, 230, 180);
     lv_obj_set_style_bg_color(chart3, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
-
-    lv_obj_set_style_size(chart3, 0, LV_PART_INDICATOR);
+     lv_chart_set_div_line_count(chart3, 0, 0);
+    // lv_obj_set_style_size(chart3, 0, LV_PART_INDICATOR);
     lv_chart_set_point_count(chart3, DISP_WINDOW_SIZE);
     // lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);   /*Show lines and points too*
-    lv_chart_set_range(chart3, LV_CHART_AXIS_PRIMARY_Y, 0, 1000);
     // lv_chart_set_range(chart1, LV_CHART_AXIS_SECONDARY_Y, 0, 1000);
-    lv_chart_set_div_line_count(chart3, 0, 0);
-    lv_chart_set_update_mode(chart3, LV_CHART_UPDATE_MODE_CIRCULAR);
+    // lv_chart_set_div_line_count(chart3, 0, 0);
+    // lv_chart_set_update_mode(chart3, LV_CHART_UPDATE_MODE_CIRCULAR);
 
     lv_obj_align_to(chart3, chart2, LV_ALIGN_OUT_RIGHT_TOP, 5, 0);
+
+    // Scatter
+    lv_obj_set_style_line_width(chart3, 0, LV_PART_ITEMS); /*Remove the lines*/
+    lv_chart_set_type(chart3, LV_CHART_TYPE_SCATTER);
+
+    //lv_chart_set_axis_tick(chart3, LV_CHART_AXIS_PRIMARY_X, 5, 5, 5, 1, true, 30);
+    //lv_chart_set_axis_tick(chart3, LV_CHART_AXIS_PRIMARY_Y, 10, 5, 6, 5, true, 50);
+
+    lv_chart_set_range(chart3, LV_CHART_AXIS_PRIMARY_X, 200, 1600);
+    lv_chart_set_range(chart3, LV_CHART_AXIS_PRIMARY_Y, 200, 1600);
+
+    lv_chart_set_point_count(chart3, 50);
+
+    /*lv_chart_series_t * ser = lv_chart_add_series(chart3, lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_PRIMARY_Y);
+    uint32_t i;
+    for(i = 0; i < 50; i++) {
+        lv_chart_set_next_value2(chart3, ser, lv_rand(0, 200), lv_rand(0, 1000));
+    }*/
+    // Scatter End
 
     /* Data Series for 3 plots*/
     ser1 = lv_chart_add_series(chart1, lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_PRIMARY_Y);
@@ -714,7 +740,25 @@ void HealthyPi_Display::draw_scr_hrv(void)
     // ser3 = lv_chart_add_series(chart3, lv_palette_main(LV_PALETTE_BLUE), LV_CHART_AXIS_PRIMARY_Y);
 
     ser_rri = lv_chart_add_series(chart2, lv_palette_main(LV_PALETTE_GREEN), LV_CHART_AXIS_PRIMARY_Y);
-    ser_poincare = lv_chart_add_series(chart3, lv_palette_main(LV_PALETTE_YELLOW), LV_CHART_AXIS_SECONDARY_Y);
+    ser_poincare = lv_chart_add_series(chart3, lv_palette_main(LV_PALETTE_YELLOW), LV_CHART_AXIS_PRIMARY_Y);
+
+    // Temp label
+    lv_obj_t *label_RRI_title = lv_label_create(scr_hrv);
+    lv_label_set_text(label_RRI_title, "R-R Int.");
+    lv_obj_align_to(label_RRI_title, chart2, LV_ALIGN_OUT_BOTTOM_MID, 0, 5);
+    lv_obj_add_style(label_RRI_title, &style_sub, LV_STATE_DEFAULT);
+
+    // Temp Number label
+    label_RRI_number = lv_label_create(scr_hrv);
+    lv_label_set_text(label_RRI_number, "--");
+    lv_obj_align_to(label_RRI_number, label_RRI_title, LV_ALIGN_OUT_BOTTOM_MID, -20, 0);
+    lv_obj_add_style(label_RRI_number, &style_temp, LV_STATE_DEFAULT);
+
+    // Temp Sub deg C label
+    static lv_obj_t *label_RRI_sub = lv_label_create(scr_hrv);
+    lv_label_set_text(label_RRI_sub, "ms");
+    lv_obj_align_to(label_RRI_sub, label_RRI_number, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
+    lv_obj_add_style(label_RRI_sub, &style_sub, LV_STATE_DEFAULT);
 }
 
 // Draw the main menu

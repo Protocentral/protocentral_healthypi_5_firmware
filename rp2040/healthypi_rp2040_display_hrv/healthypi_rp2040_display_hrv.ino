@@ -179,8 +179,8 @@ void setup()
   afe44xx.afe44xx_init();
   delay(100);
 
-  //max30001.BeginECGBioZ();
-  max30001.begin(true,true);
+  // max30001.BeginECGBioZ();
+  max30001.begin(true, true);
 
   hpi_display.init();
   delay(1000);
@@ -216,7 +216,7 @@ void loop()
   unsigned long currentTime = millis();
 
   max30001.max30001ServiceAllInterrupts();
-  if(true) //(max30001.ecgSamplesAvailable > 0)
+  if (true) //(max30001.ecgSamplesAvailable > 0)
   {
     for (int i = 0; i < max30001.ecgSamplesAvailable; i++)
     {
@@ -224,7 +224,7 @@ void loop()
       // setData(max30001.s32ECGData[i], 0, false);
       // send_data_serial_port();
     }
-   
+
     hpi_display.draw_plotECG(fltECGSamples, max30001.ecgSamplesAvailable);
 
     hpi_display.add_samples(max30001.ecgSamplesAvailable);
@@ -241,16 +241,19 @@ void loop()
       // send_data_serial_port();
     }
 
-    //hpi_display.draw_plotresp(fltBIOZSamples, max30001.biozSamplesAvailable);
+    // hpi_display.draw_plotresp(fltBIOZSamples, max30001.biozSamplesAvailable);
 
     max30001.biozSamplesAvailable = 0;
   }
 
-  if(max30001.rrAvailable==true)
+  if (max30001.rrAvailable == true)
   {
-    //hpi_display.set_rr(max30001.rr);
-    hpi_display.draw_plotRRI(max30001.RtoR_ms);
-    max30001.rrAvailable=false;
+    // hpi_display.set_rr(max30001.rr);
+    if (max30001.RtoR_ms > 0)
+    {
+      hpi_display.draw_plotRRI(max30001.RtoR_ms);
+    }
+    max30001.rrAvailable = false;
   }
 
   // send_data_serial_port();
@@ -281,7 +284,7 @@ void loop()
     memcpy(&DataPacket[13], &afe44xx_raw_data.RED_data, sizeof(signed long));
 
     // draw_plotppg(redPlot);
-    //hpi_display.draw_plotppg(redPlot);
+    // hpi_display.draw_plotppg(redPlot);
 
     if (afe44xx_raw_data.buffer_count_overflow)
     {
@@ -290,15 +293,15 @@ void loop()
       {
         DataPacket[19] = 0;
         sp02 = 0;
-        //hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, false);
+        // hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, false);
       }
       else
       {
         DataPacket[19] = afe44xx_raw_data.spo2;
         // sp02 = (uint8_t)afe44xx_raw_data.spo2;
-        //hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, true);
-        //hpi_display.updateHR((uint8_t)80);
-        //hpi_display.updateRR((uint8_t)20);
+        // hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, true);
+        // hpi_display.updateHR((uint8_t)80);
+        // hpi_display.updateRR((uint8_t)20);
       }
 
       spo2_calc_done = true;
@@ -308,12 +311,12 @@ void loop()
     prevCountTime = currentTime;
   }
 
-  //if()
+  // if()
 
   if (currentTime - prevTempCountTime >= TEMP_READ_INTERVAL)
   {
     float tread = getTemperature();
-    //hpi_display.updateTemp(tread);
+    // hpi_display.updateTemp(tread);
     prevTempCountTime = currentTime;
   }
 
@@ -325,7 +328,7 @@ void loop()
   {
     ccsSensor.readAlgorithmResults();
 
-    //hpi_display.updateEnv(ccsSensor.getCO2(), ccsSensor.getTVOC());
+    // hpi_display.updateEnv(ccsSensor.getCO2(), ccsSensor.getTVOC());
   }
 
   hpi_display.do_set_scale();
@@ -333,11 +336,6 @@ void loop()
   lv_timer_handler(); /* let the GUI do its work */
 
   // delay(1);
-}
-
-float mapValue(float ip, float ipmin, float ipmax, float tomin, float tomax)
-{
-  return tomin + (((tomax - tomin) * (ip - ipmin)) / (ipmax - ipmin));
 }
 
 float getTemperature(void)

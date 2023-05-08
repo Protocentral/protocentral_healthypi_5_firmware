@@ -25,6 +25,8 @@ private:
 
     float gx = 0;
 
+    float rri_prev=0;
+
     void init_styles(void);
 
 public:
@@ -37,7 +39,7 @@ public:
 
 
     void draw_plotRRI(float data_rri);
-    void draw_plot_poincare(float *data_ecg, int num_samples);
+    void draw_plot_poincare(float x, float y);
 
     void draw_scr_charts_all(void);
 
