@@ -35,6 +35,8 @@ lv_obj_t *label_rr;
 lv_obj_t *label_temp;
 
 lv_obj_t *label_RRI_number;
+lv_obj_t *label_SDNN_number;
+lv_obj_t *label_RMSSD_number;
 
 lv_obj_t *label_co2_voc;
 
@@ -322,7 +324,7 @@ void draw_footer(lv_obj_t *parent)
     LV_IMG_DECLARE(logo_oneline);
     lv_obj_t *img1 = lv_img_create(parent);
     lv_img_set_src(img1, &logo_oneline);
-    lv_obj_align(img1, LV_ALIGN_BOTTOM_MID, 10, -10);
+    lv_obj_align(img1, LV_ALIGN_BOTTOM_MID, 10, -5);
     lv_obj_set_size(img1, 104, 10);
 
     // Label for Symbols
@@ -331,9 +333,9 @@ void draw_footer(lv_obj_t *parent)
     lv_obj_align(label_symbols, LV_ALIGN_BOTTOM_LEFT, 5, -10);
 
     // Label for CO2 / VOC
-    label_co2_voc = lv_label_create(parent);
-    lv_label_set_text(label_co2_voc, "CO2: 400 VOC: 0");
-    lv_obj_align(label_co2_voc, LV_ALIGN_BOTTOM_LEFT, 45, -10);
+    //label_co2_voc = lv_label_create(parent);
+    //lv_label_set_text(label_co2_voc, "CO2: 400 VOC: 0");
+    //lv_obj_align(label_co2_voc, LV_ALIGN_BOTTOM_LEFT, 45, -10);
 }
 
 void get_screen(enum hpi_scr_t get_scr)
@@ -502,7 +504,9 @@ void HealthyPi_Display::init_styles()
     grad.stops[0].frac = 128;
     grad.stops[1].frac = 192;
 
-    lv_style_set_bg_grad(&style_scr_back, &grad);
+    lv_style_set_bg_color(&style_scr_back, lv_color_black());
+
+    //lv_style_set_bg_grad(&style_scr_back, &grad);
 }
 
 void HealthyPi_Display::add_samples(int num_samples)
@@ -671,7 +675,7 @@ void HealthyPi_Display::draw_scr_hrv(void)
 
     // Create Chart 1
     chart1 = lv_chart_create(scr_hrv);
-    lv_obj_set_size(chart1, 470, 110);
+    lv_obj_set_size(chart1, 470, 90);
     lv_obj_set_style_bg_color(chart1, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
 
     lv_obj_set_style_size(chart1, 0, LV_PART_INDICATOR);
@@ -686,7 +690,7 @@ void HealthyPi_Display::draw_scr_hrv(void)
 
     // Create Chart 2
     chart2 = lv_chart_create(scr_hrv);
-    lv_obj_set_size(chart2, 200, 100);
+    lv_obj_set_size(chart2, 425, 90);
     lv_obj_set_style_bg_color(chart2, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
 
     // lv_obj_set_style_size(chart2, 0, LV_PART_INDICATOR);
@@ -699,11 +703,11 @@ void HealthyPi_Display::draw_scr_hrv(void)
     lv_chart_set_update_mode(chart2, LV_CHART_UPDATE_MODE_CIRCULAR);
     lv_chart_set_axis_tick(chart2, LV_CHART_AXIS_PRIMARY_Y, 5, 5, 5, 1, true, 60);
 
-    lv_obj_align_to(chart2, chart1, LV_ALIGN_OUT_BOTTOM_LEFT, 35, 5);
+    lv_obj_align_to(chart2, chart1, LV_ALIGN_OUT_BOTTOM_LEFT, 45, 3);
 
     // Create Chart 3
     chart3 = lv_chart_create(scr_hrv);
-    lv_obj_set_size(chart3, 230, 180);
+    lv_obj_set_size(chart3, 220, 110);
     lv_obj_set_style_bg_color(chart3, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
      lv_chart_set_div_line_count(chart3, 0, 0);
     // lv_obj_set_style_size(chart3, 0, LV_PART_INDICATOR);
@@ -713,7 +717,7 @@ void HealthyPi_Display::draw_scr_hrv(void)
     // lv_chart_set_div_line_count(chart3, 0, 0);
     // lv_chart_set_update_mode(chart3, LV_CHART_UPDATE_MODE_CIRCULAR);
 
-    lv_obj_align_to(chart3, chart2, LV_ALIGN_OUT_RIGHT_TOP, 5, 0);
+    lv_obj_align_to(chart3, chart2, LV_ALIGN_OUT_BOTTOM_RIGHT, 0, 3);
 
     // Scatter
     lv_obj_set_style_line_width(chart3, 0, LV_PART_ITEMS); /*Remove the lines*/
@@ -742,23 +746,59 @@ void HealthyPi_Display::draw_scr_hrv(void)
     ser_rri = lv_chart_add_series(chart2, lv_palette_main(LV_PALETTE_GREEN), LV_CHART_AXIS_PRIMARY_Y);
     ser_poincare = lv_chart_add_series(chart3, lv_palette_main(LV_PALETTE_YELLOW), LV_CHART_AXIS_PRIMARY_Y);
 
-    // Temp label
+    // RRI label
     lv_obj_t *label_RRI_title = lv_label_create(scr_hrv);
     lv_label_set_text(label_RRI_title, "R-R Int.");
-    lv_obj_align_to(label_RRI_title, chart2, LV_ALIGN_OUT_BOTTOM_MID, 0, 5);
+    lv_obj_align_to(label_RRI_title, chart2, LV_ALIGN_OUT_BOTTOM_LEFT, -30, 5);
     lv_obj_add_style(label_RRI_title, &style_sub, LV_STATE_DEFAULT);
 
-    // Temp Number label
+    // RRI number label
     label_RRI_number = lv_label_create(scr_hrv);
     lv_label_set_text(label_RRI_number, "--");
     lv_obj_align_to(label_RRI_number, label_RRI_title, LV_ALIGN_OUT_BOTTOM_MID, -20, 0);
     lv_obj_add_style(label_RRI_number, &style_temp, LV_STATE_DEFAULT);
 
-    // Temp Sub deg C label
+    // RRI sub label
     static lv_obj_t *label_RRI_sub = lv_label_create(scr_hrv);
     lv_label_set_text(label_RRI_sub, "ms");
     lv_obj_align_to(label_RRI_sub, label_RRI_number, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
     lv_obj_add_style(label_RRI_sub, &style_sub, LV_STATE_DEFAULT);
+
+     // SDNN label
+    lv_obj_t *label_SDNN_title = lv_label_create(scr_hrv);
+    lv_label_set_text(label_SDNN_title, "SDNN");
+    lv_obj_align_to(label_SDNN_title, label_RRI_title, LV_ALIGN_OUT_RIGHT_MID, 30, 0);
+    lv_obj_add_style(label_SDNN_title, &style_sub, LV_STATE_DEFAULT);
+
+    // SDNN Number label
+    label_SDNN_number = lv_label_create(scr_hrv);
+    lv_label_set_text(label_SDNN_number, "--");
+    lv_obj_align_to(label_SDNN_number, label_SDNN_title, LV_ALIGN_OUT_BOTTOM_MID, -20, 0);
+    lv_obj_add_style(label_SDNN_number, &style_temp, LV_STATE_DEFAULT);
+
+    // SDNN Sub label
+    static lv_obj_t *label_SDNN_sub = lv_label_create(scr_hrv);
+    lv_label_set_text(label_SDNN_sub, "ms");
+    lv_obj_align_to(label_SDNN_sub, label_SDNN_number, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
+    lv_obj_add_style(label_SDNN_sub, &style_sub, LV_STATE_DEFAULT);
+
+    // RMSSD title label
+    lv_obj_t *label_RMSSD_title = lv_label_create(scr_hrv);
+    lv_label_set_text(label_RMSSD_title, "RMSSD");
+    lv_obj_align_to(label_RMSSD_title, label_SDNN_title, LV_ALIGN_OUT_RIGHT_MID, 30, 0);
+    lv_obj_add_style(label_RMSSD_title, &style_sub, LV_STATE_DEFAULT);
+
+    // RMSSD Number label
+    label_RMSSD_number = lv_label_create(scr_hrv);
+    lv_label_set_text(label_RMSSD_number, "--");
+    lv_obj_align_to(label_RMSSD_number, label_RMSSD_title, LV_ALIGN_OUT_BOTTOM_MID, -20, 0);
+    lv_obj_add_style(label_RMSSD_number, &style_temp, LV_STATE_DEFAULT);
+
+    // RMSSD Sub label
+    static lv_obj_t *label_RMSSD_sub = lv_label_create(scr_hrv);
+    lv_label_set_text(label_RMSSD_sub, "ms");
+    lv_obj_align_to(label_RMSSD_sub, label_RMSSD_number, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
+    lv_obj_add_style(label_RMSSD_sub, &style_sub, LV_STATE_DEFAULT);
 }
 
 // Draw the main menu

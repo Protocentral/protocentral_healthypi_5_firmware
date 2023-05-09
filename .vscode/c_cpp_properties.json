@@ -23,7 +23,7 @@
                 "/Users/akw/Library/Arduino15/packages/rp2040/hardware/rp2040/3.1.1/libraries/Wire/src",
                 "/Users/akw/Documents/Arduino/libraries/TFT_eSPI",
                 "/Users/akw/Library/Arduino15/packages/rp2040/hardware/rp2040/3.1.1/libraries/LittleFS/src",
-                "/Users/akw/Documents/Arduino/libraries/protocentral-afe4490-arduino/src",
+                "/Users/akw/Documents/Arduino/libraries/ProtoCentral_AFE4490_PPG_and_SpO2_boards_library/src",
                 "/Users/akw/Documents/Arduino/libraries/protocentral_max30001_arduino_library/src",
                 "/Users/akw/Documents/Arduino/libraries/ProtoCentral_TLA20xx/src",
                 "/Users/akw/Documents/Arduino/libraries/SparkFun_CCS811_Arduino_Library/src",
