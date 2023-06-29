@@ -1,0 +1,7 @@
+{
+    "configuration": "flash=2097152_0,freq=133,opt=Optimize2,rtti=Disabled,stackprotect=Disabled,exceptions=Disabled,dbgport=Disabled,dbglvl=None,usbstack=picosdk,ipstack=ipv4only,uploadmethod=default",
+    "board": "rp2040:rp2040:rpipico",
+    "output": "../build",
+    "port": "/dev/tty.usbmodem101",
+    "sketch": "healthypi_rp2040_display_lvgl.ino"
+}
