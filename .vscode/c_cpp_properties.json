@@ -16,13 +16,13 @@
             ],
             "intelliSenseMode": "gcc-x64",
             "includePath": [
-                "/Users/akw/Library/Arduino15/packages/rp2040/hardware/rp2040/3.1.1/include",
-                "/Users/akw/Library/Arduino15/packages/rp2040/hardware/rp2040/3.1.1/cores/rp2040",
-                "/Users/akw/Library/Arduino15/packages/rp2040/hardware/rp2040/3.1.1/variants/rpipico",
-                "/Users/akw/Library/Arduino15/packages/rp2040/hardware/rp2040/3.1.1/libraries/SPI/src",
-                "/Users/akw/Library/Arduino15/packages/rp2040/hardware/rp2040/3.1.1/libraries/Wire/src",
+                "/Users/akw/Library/Arduino15/packages/rp2040/hardware/rp2040/3.3.0/include",
+                "/Users/akw/Library/Arduino15/packages/rp2040/hardware/rp2040/3.3.0/cores/rp2040",
+                "/Users/akw/Library/Arduino15/packages/rp2040/hardware/rp2040/3.3.0/variants/rpipico",
+                "/Users/akw/Library/Arduino15/packages/rp2040/hardware/rp2040/3.3.0/libraries/SPI/src",
+                "/Users/akw/Library/Arduino15/packages/rp2040/hardware/rp2040/3.3.0/libraries/Wire/src",
                 "/Users/akw/Documents/Arduino/libraries/TFT_eSPI",
-                "/Users/akw/Library/Arduino15/packages/rp2040/hardware/rp2040/3.1.1/libraries/LittleFS/src",
+                "/Users/akw/Library/Arduino15/packages/rp2040/hardware/rp2040/3.3.0/libraries/LittleFS/src",
                 "/Users/akw/Documents/Arduino/libraries/protocentral-afe4490-arduino/src",
                 "/Users/akw/Documents/Arduino/libraries/protocentral_max30001_arduino_library/src",
                 "/Users/akw/Documents/Arduino/libraries/ProtoCentral_TLA20xx/src",
@@ -35,7 +35,7 @@
                 "/Users/akw/Library/Arduino15/packages/rp2040/tools/pqt-gcc/1.5.0-b-c7bab52/arm-none-eabi/include"
             ],
             "forcedInclude": [
-                "/Users/akw/Library/Arduino15/packages/rp2040/hardware/rp2040/3.1.1/cores/rp2040/Arduino.h"
+                "/Users/akw/Library/Arduino15/packages/rp2040/hardware/rp2040/3.3.0/cores/rp2040/Arduino.h"
             ],
             "cStandard": "c11",
             "cppStandard": "c++17",
@@ -54,6 +54,7 @@
                 "LWIP_CHECKSUM_CTRL_PER_NETIF=1",
                 "ARDUINO_VARIANT=\"rpipico\"",
                 "TARGET_RP2040",
+                "PICO_FLASH_SIZE_BYTES=2097152",
                 "ARM_MATH_CM0_FAMILY",
                 "ARM_MATH_CM0_PLUS",
                 "F_CPU=133000000L",
