@@ -24,21 +24,10 @@
 #include "Protocentral_spo2_algorithm.h"
 #include <protocentral_max30001.h>
 
-// Qwiic Sensor includes
-#include <protocentral_TLA20xx.h>
-#include "SparkFunCCS811.h"
-
 #include "images.h"
 #include "hpi_defines.h"
 
 #include "healthypi_display.h"
-
-// Qwiic Sensors
-#define TLA20XX_I2C_ADDR 0x49
-#define CCS811_ADDR 0x5B // Default I2C Address
-
-TLA20XX tla2022(TLA20XX_I2C_ADDR);
-CCS811 ccsSensor(CCS811_ADDR);
 
 void send_data_serial_port(void);
 
@@ -146,26 +135,11 @@ void setup()
   // Configure I2C pins for Temperature sensor/QWIIC ports
   Wire1.setSDA(6);
   Wire1.setSCL(7);
-
   Wire1.begin();
 
   i2c_write_byte(TEMP_SENS_ADDRESS, MAX30205_CONFIGURATION, 0x00); // mode config
   i2c_write_byte(TEMP_SENS_ADDRESS, MAX30205_THYST, 0x00);         // set threshold
   i2c_write_byte(TEMP_SENS_ADDRESS, MAX30205_TOS, 0x00);           //
-
-  /*tla2022.begin();
-
-  tla2022.setMode(TLA20XX::OP_CONTINUOUS);
-  tla2022.setDR(TLA20XX::DR_128SPS);
-  tla2022.setFSR(TLA20XX::FSR_2_048V);
-  */
-
-  if (ccsSensor.begin(Wire1) == false)
-  {
-    Serial.print("CCS811 error. Please check wiring.");
-    // while (1)
-    //;
-  }
 
   if (hpi_ble_enabled)
   {
@@ -215,7 +189,7 @@ void loop()
   unsigned long currentTime = millis();
 
   max30001.max30001ServiceAllInterrupts();
-  if(true) //(max30001.ecgSamplesAvailable > 0)
+  if (true) //(max30001.ecgSamplesAvailable > 0)
   {
     for (int i = 0; i < max30001.ecgSamplesAvailable; i++)
     {
@@ -316,17 +290,6 @@ void loop()
     float tread = getTemperature();
     hpi_display.updateTemp(tread);
     prevTempCountTime = currentTime;
-  }
-
-  // float val = tla2022.read_adc(); // +/- 2.048 V FSR, 1 LSB = 1 mV
-  // Serial.println(val);
-
-  // Check to see if data is ready with .dataAvailable()
-  if (ccsSensor.dataAvailable())
-  {
-    ccsSensor.readAlgorithmResults();
-
-    hpi_display.updateEnv(ccsSensor.getCO2(), ccsSensor.getTVOC());
   }
 
   hpi_display.do_set_scale();
