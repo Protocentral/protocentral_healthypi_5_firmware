@@ -1,7 +1,7 @@
 {
     "board": "rp2040:rp2040:rpipico",
     "port": "/dev/tty.Bluetooth-Incoming-Port",
-    "sketch": "rp2040/healthypi_rp2040_display_lvgl/healthypi_rp2040_display_lvgl.ino",
+    "sketch": "rp2040/1_healthypi_rp2040_serial_ble_stream/1_healthypi_rp2040_serial_ble_stream.ino",
     "output": "../build",
     "configuration": "flash=2097152_0,freq=133,opt=Optimize2,rtti=Disabled,stackprotect=Disabled,exceptions=Disabled,dbgport=Disabled,dbglvl=None,usbstack=picosdk,ipbtstack=ipv4only,uploadmethod=default"
 }

@@ -60,6 +60,8 @@ char DataPacket[30];
 #define PIN_RP2040_TX_ESP32_RX 24
 #define PIN_RP2040_RX_ESP32_TX 25
 
+#define RP2040_ESP32_UART_BAUD  230400
+
 #define ZERO 0
 // volatile char DataPacket[DATA_LEN];
 const char DataPacketHeader[] = {CES_CMDIF_PKT_START_1, CES_CMDIF_PKT_START_2, CES_CMDIF_DATA_LEN_LSB, CES_CMDIF_DATA_LEN_MSB, CES_CMDIF_TYPE_DATA};
@@ -120,7 +122,7 @@ void setup()
     // Serial 1 -> UART0 connected to Raspberry Pi 40-pin header
     Serial2.setTX(PIN_RP2040_TX_ESP32_RX);
     Serial2.setRX(PIN_RP2040_RX_ESP32_TX);
-    Serial2.begin(115200);
+    Serial2.begin(RP2040_ESP32_UART_BAUD);
   }
 
   delay(100);

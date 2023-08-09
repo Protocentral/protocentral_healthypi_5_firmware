@@ -56,15 +56,15 @@
 
 /************** Packet Related Variables **********************/
 
-int ecs_rx_state = 0;                       // To check the state of the packet
-int CES_Pkt_Len;                            // To store the Packet Length Deatils
-int CES_Pkt_Pos_Counter, CES_Data_Counter;  // Packet and data counter
-int CES_Pkt_PktType;                        // To store the Packet Type
-char CES_Pkt_Data_Counter[1000];            // Buffer to store the data from the packet
-char CES_Pkt_ECG_Counter[4];                // Buffer to hold ECG data
-char CES_Pkt_Resp_Counter[4];               // Respiration Buffer
-char CES_Pkt_SpO2_Counter_RED[4];           // Buffer for SpO2 RED
-char CES_Pkt_SpO2_Counter_IR[4];            // Buffer for SpO2 IR
+int ecs_rx_state = 0;                      // To check the state of the packet
+int CES_Pkt_Len;                           // To store the Packet Length Deatils
+int CES_Pkt_Pos_Counter, CES_Data_Counter; // Packet and data counter
+int CES_Pkt_PktType;                       // To store the Packet Type
+char CES_Pkt_Data_Counter[1000];           // Buffer to store the data from the packet
+char CES_Pkt_ECG_Counter[4];               // Buffer to hold ECG data
+char CES_Pkt_Resp_Counter[4];              // Respiration Buffer
+char CES_Pkt_SpO2_Counter_RED[4];          // Buffer for SpO2 RED
+char CES_Pkt_SpO2_Counter_IR[4];           // Buffer for SpO2 IR
 
 char respdataTag = 0;
 signed long ecg, resp;
@@ -102,28 +102,37 @@ BLECharacteristic *resp_Characteristic = NULL;
 #define PIN_RP2040_TX_ESP32_RX 7
 #define PIN_RP2040_RX_ESP32_TX 6
 
-class MyServerCallbacks : public BLEServerCallbacks {
-  void onConnect(BLEServer *pServer) {
+#define RP2040_ESP32_UART_BAUD 230400
+
+class MyServerCallbacks : public BLEServerCallbacks
+{
+  void onConnect(BLEServer *pServer)
+  {
     deviceConnected = true;
     Serial.println("connected");
   }
 
-  void onDisconnect(BLEServer *pServer) {
+  void onDisconnect(BLEServer *pServer)
+  {
     deviceConnected = false;
     Serial.println("disconnected");
   }
 };
 
-class MyCallbackHandler : public BLECharacteristicCallbacks {
-  void onWrite(BLECharacteristic *datastream_Characteristic) {
+class MyCallbackHandler : public BLECharacteristicCallbacks
+{
+  void onWrite(BLECharacteristic *datastream_Characteristic)
+  {
     std::string value = datastream_Characteristic->getValue();
-    //int len = value.length();
+    // int len = value.length();
     strValue = "0";
 
-    if (value.length() > 0) {
+    if (value.length() > 0)
+    {
       Serial.print("New value: ");
 
-      for (int i = 0; i < value.length(); i++) {
+      for (int i = 0; i < value.length(); i++)
+      {
         Serial.print(String(value[i]));
         strValue += value[i];
       }
@@ -133,49 +142,49 @@ class MyCallbackHandler : public BLECharacteristicCallbacks {
   }
 };
 
-
-void HealthyPi5_BLE_Init() {
-  BLEDevice::init("Healthypi 5");       // Create the BLE Device
-  pServer = BLEDevice::createServer();  // Create the BLE Server
+void HealthyPi5_BLE_Init()
+{
+  BLEDevice::init("Healthypi 5");      // Create the BLE Device
+  pServer = BLEDevice::createServer(); // Create the BLE Server
   pServer->setCallbacks(new MyServerCallbacks());
-  BLEService *HeartrateService = pServer->createService(Heartrate_SERVICE_UUID);  // Create the BLE Service
-  BLEService *sp02Service = pServer->createService(sp02_SERVICE_UUID);            // Create the BLE Service
+  BLEService *HeartrateService = pServer->createService(Heartrate_SERVICE_UUID); // Create the BLE Service
+  BLEService *sp02Service = pServer->createService(sp02_SERVICE_UUID);           // Create the BLE Service
   BLEService *TemperatureService = pServer->createService(TEMP_SERVICE_UUID);
   BLEService *batteryService = pServer->createService(BATTERY_SERVICE_UUID);
   BLEService *hrvService = pServer->createService(HRV_SERVICE_UUID);
   BLEService *datastreamService = pServer->createService(DATASTREAM_SERVICE_UUID);
 
   Heartrate_Characteristic = HeartrateService->createCharacteristic(
-    Heartrate_CHARACTERISTIC_UUID,
-    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY);
+      Heartrate_CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY);
 
   sp02_Characteristic = sp02Service->createCharacteristic(
-    sp02_CHARACTERISTIC_UUID,
-    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY);
+      sp02_CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY);
 
   temperature_Characteristic = TemperatureService->createCharacteristic(
-    TEMP_CHARACTERISTIC_UUID,
-    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY);
+      TEMP_CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY);
 
   battery_Characteristic = batteryService->createCharacteristic(
-    BATTERY_CHARACTERISTIC_UUID,
-    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY);
+      BATTERY_CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY);
 
   hrv_Characteristic = hrvService->createCharacteristic(
-    HRV_CHARACTERISTIC_UUID,
-    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY);
+      HRV_CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY);
 
   hist_Characteristic = hrvService->createCharacteristic(
-    HIST_CHARACTERISTIC_UUID,
-    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY);
+      HIST_CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY);
 
   datastream_Characteristic = datastreamService->createCharacteristic(
-    DATASTREAM_CHARACTERISTIC_UUID,
-    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY);
+      DATASTREAM_CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY);
 
   resp_Characteristic = datastreamService->createCharacteristic(
-    RESP_CHARACTERISTIC_UUID,
-    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY);
+      RESP_CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY);
 
   Heartrate_Characteristic->addDescriptor(new BLE2902());
   sp02_Characteristic->addDescriptor(new BLE2902());
@@ -209,27 +218,31 @@ void HealthyPi5_BLE_Init() {
   Serial.println("Waiting a client connection to notify...");
 }
 
-void handle_ble_stack() {
+void handle_ble_stack()
+{
 
-  if (ecg_buf_ready) {
+  if (ecg_buf_ready)
+  {
     ecg_buf_ready = false;
     datastream_Characteristic->setValue(ecg_data_buff, 38);
     datastream_Characteristic->notify();
   }
 
-  if (ppg_buf_ready) {
+  if (ppg_buf_ready)
+  {
     ppg_buf_ready = false;
     hist_Characteristic->setValue(ppg_data_buff, 19);
     hist_Characteristic->notify();
   }
 
-  if (resp_buf_ready) {
+  if (resp_buf_ready)
+  {
     resp_buf_ready = false;
     resp_Characteristic->setValue(resp_data_buff, 40);
     resp_Characteristic->notify();
   }
 
-  if (1)  //(spo2_calc_done)
+  if (1) //(spo2_calc_done)
   {
     sp02 = 96;
 
@@ -274,7 +287,7 @@ void handle_ble_stack() {
     hrv_Characteristic->notify();
   }
 
-  if (1)  //(temp_data_ready)
+  if (1) //(temp_data_ready)
   {
     temp = 37.5;
     uint16_t temp_uint = (uint16_t)(temp * 100);
@@ -288,116 +301,125 @@ void handle_ble_stack() {
   }
 
   // connecting
-  if (deviceConnected && !oldDeviceConnected) {
+  if (deviceConnected && !oldDeviceConnected)
+  {
     oldDeviceConnected = deviceConnected;
   }
 
-  if (!deviceConnected && oldDeviceConnected) {
-    delay(500);                   // give the bluetooth stack the chance to get things ready
-    pServer->startAdvertising();  // restart advertising
+  if (!deviceConnected && oldDeviceConnected)
+  {
+    delay(500);                  // give the bluetooth stack the chance to get things ready
+    pServer->startAdvertising(); // restart advertising
     Serial.println("start advertising");
     oldDeviceConnected = deviceConnected;
   }
 }
 
+void hPiProcessData(char rxch)
+{
+  switch (ecs_rx_state)
+  {
+  case CESState_Init:
+    if (rxch == CES_CMDIF_PKT_START_1)
+      ecs_rx_state = CESState_SOF1_Found;
+    break;
 
+  case CESState_SOF1_Found:
+    if (rxch == CES_CMDIF_PKT_START_2)
+      ecs_rx_state = CESState_SOF2_Found;
+    else
+      ecs_rx_state = CESState_Init; // Invalid Packet, reset state to init
+    break;
 
-void hPiProcessData(char rxch) {
-  switch (ecs_rx_state) {
-    case CESState_Init:
-      if (rxch == CES_CMDIF_PKT_START_1)
-        ecs_rx_state = CESState_SOF1_Found;
-      break;
+  case CESState_SOF2_Found:
+    //    println("inside 3");
+    ecs_rx_state = CESState_PktLen_Found;
+    CES_Pkt_Len = (int)rxch;
+    CES_Pkt_Pos_Counter = CES_CMDIF_IND_LEN;
+    CES_Data_Counter = 0;
+    break;
 
-    case CESState_SOF1_Found:
-      if (rxch == CES_CMDIF_PKT_START_2)
-        ecs_rx_state = CESState_SOF2_Found;
-      else
-        ecs_rx_state = CESState_Init;  //Invalid Packet, reset state to init
-      break;
-
-    case CESState_SOF2_Found:
-      //    println("inside 3");
-      ecs_rx_state = CESState_PktLen_Found;
-      CES_Pkt_Len = (int)rxch;
-      CES_Pkt_Pos_Counter = CES_CMDIF_IND_LEN;
-      CES_Data_Counter = 0;
-      break;
-
-    case CESState_PktLen_Found:
-      //    println("inside 4");
-      CES_Pkt_Pos_Counter++;
-      if (CES_Pkt_Pos_Counter < CES_CMDIF_PKT_OVERHEAD)  //Read Header
+  case CESState_PktLen_Found:
+    //    println("inside 4");
+    CES_Pkt_Pos_Counter++;
+    if (CES_Pkt_Pos_Counter < CES_CMDIF_PKT_OVERHEAD) // Read Header
+    {
+      if (CES_Pkt_Pos_Counter == CES_CMDIF_IND_LEN_MSB)
+        CES_Pkt_Len = (int)((rxch << 8) | CES_Pkt_Len);
+      else if (CES_Pkt_Pos_Counter == CES_CMDIF_IND_PKTTYPE)
+        CES_Pkt_PktType = (int)rxch;
+    }
+    else if ((CES_Pkt_Pos_Counter >= CES_CMDIF_PKT_OVERHEAD) && (CES_Pkt_Pos_Counter < CES_CMDIF_PKT_OVERHEAD + CES_Pkt_Len + 1)) // Read Data
+    {
+      if (CES_Pkt_PktType == 2)
       {
-        if (CES_Pkt_Pos_Counter == CES_CMDIF_IND_LEN_MSB)
-          CES_Pkt_Len = (int)((rxch << 8) | CES_Pkt_Len);
-        else if (CES_Pkt_Pos_Counter == CES_CMDIF_IND_PKTTYPE)
-          CES_Pkt_PktType = (int)rxch;
-      } else if ((CES_Pkt_Pos_Counter >= CES_CMDIF_PKT_OVERHEAD) && (CES_Pkt_Pos_Counter < CES_CMDIF_PKT_OVERHEAD + CES_Pkt_Len + 1))  //Read Data
-      {
-        if (CES_Pkt_PktType == 2) {
-          CES_Pkt_Data_Counter[CES_Data_Counter++] = (char)(rxch);  // Buffer that assigns the data separated from the packet
-        }
-      } else  //All  and data received
-      {
-        if (rxch == CES_CMDIF_PKT_STOP) {
-          //Serial.println(CES_Pkt_Len);
-
-          CES_Pkt_ECG_Counter[0] = CES_Pkt_Data_Counter[0];
-          CES_Pkt_ECG_Counter[1] = CES_Pkt_Data_Counter[1];
-          CES_Pkt_ECG_Counter[2] = CES_Pkt_Data_Counter[2];
-          CES_Pkt_ECG_Counter[3] = CES_Pkt_Data_Counter[3];
-
-          CES_Pkt_Resp_Counter[0] = CES_Pkt_Data_Counter[4];
-          CES_Pkt_Resp_Counter[1] = CES_Pkt_Data_Counter[5];
-          CES_Pkt_Resp_Counter[2] = CES_Pkt_Data_Counter[6];
-          CES_Pkt_Resp_Counter[3] = CES_Pkt_Data_Counter[7];
-
-          respdataTag = CES_Pkt_Data_Counter[8];
-
-          CES_Pkt_SpO2_Counter_IR[0] = CES_Pkt_Data_Counter[9];
-          CES_Pkt_SpO2_Counter_IR[1] = CES_Pkt_Data_Counter[10];
-          CES_Pkt_SpO2_Counter_IR[2] = CES_Pkt_Data_Counter[11];
-          CES_Pkt_SpO2_Counter_IR[3] = CES_Pkt_Data_Counter[12];
-
-          CES_Pkt_SpO2_Counter_RED[0] = CES_Pkt_Data_Counter[13];
-          CES_Pkt_SpO2_Counter_RED[1] = CES_Pkt_Data_Counter[14];
-          CES_Pkt_SpO2_Counter_RED[2] = CES_Pkt_Data_Counter[15];
-          CES_Pkt_SpO2_Counter_RED[3] = CES_Pkt_Data_Counter[16];
-
-          //temp = (float) ((int) CES_Pkt_Data_Counter[17]| CES_Pkt_Data_Counter[18]<<8)/100;
-
-          int data1 = CES_Pkt_ECG_Counter[0] | CES_Pkt_ECG_Counter[1] << 8 | CES_Pkt_ECG_Counter[2] << 16 | CES_Pkt_ECG_Counter[3] << 24;  //reversePacket(CES_Pkt_ECG_Counter, CES_Pkt_ECG_Counter.length-1);
-          ecg = (int32_t)data1;
-
-          int data2 = CES_Pkt_Resp_Counter[0] | CES_Pkt_Resp_Counter[1] << 8 | CES_Pkt_Resp_Counter[2] << 16 | CES_Pkt_Resp_Counter[3] << 24;  //reversePacket(CES_Pkt_ECG_Counter, CES_Pkt_ECG_Counter.length-1);
-          resp = (int32_t)data2;
-
-          int data3 = CES_Pkt_SpO2_Counter_IR[0] | CES_Pkt_SpO2_Counter_IR[1] << 8 | CES_Pkt_SpO2_Counter_IR[2] << 16 | CES_Pkt_SpO2_Counter_IR[3] << 24;  //reversePacket(CES_Pkt_SpO2_Counter_IR, CES_Pkt_SpO2_Counter_IR.length-1);
-          spo2_ir = (int16_t)(data3 >> 8);
-          spo2_ir = spo2_ir;
-
-          int data4 = CES_Pkt_SpO2_Counter_RED[0] | CES_Pkt_SpO2_Counter_RED[1] << 8 | CES_Pkt_SpO2_Counter_RED[2] << 16 | CES_Pkt_SpO2_Counter_RED[3] << 24;  //reversePacket(CES_Pkt_SpO2_Counter_RED, CES_Pkt_SpO2_Counter_RED.length-1);
-          spo2_red = (uint16_t)data4;
-
-          setData(ecg, resp, respdataTag, spo2_ir);
-
-          sp02 = (int)(CES_Pkt_Data_Counter[19]);
-          spo2_calc_done = true;
-
-          ecs_rx_state = CESState_Init;
-        } else {
-          ecs_rx_state = CESState_Init;
-        }
+        CES_Pkt_Data_Counter[CES_Data_Counter++] = (char)(rxch); // Buffer that assigns the data separated from the packet
       }
-      break;
+    }
+    else // All  and data received
+    {
+      if (rxch == CES_CMDIF_PKT_STOP)
+      {
+        // Serial.println(CES_Pkt_Len);
 
-    default:
-      break;
+        CES_Pkt_ECG_Counter[0] = CES_Pkt_Data_Counter[0];
+        CES_Pkt_ECG_Counter[1] = CES_Pkt_Data_Counter[1];
+        CES_Pkt_ECG_Counter[2] = CES_Pkt_Data_Counter[2];
+        CES_Pkt_ECG_Counter[3] = CES_Pkt_Data_Counter[3];
+
+        CES_Pkt_Resp_Counter[0] = CES_Pkt_Data_Counter[4];
+        CES_Pkt_Resp_Counter[1] = CES_Pkt_Data_Counter[5];
+        CES_Pkt_Resp_Counter[2] = CES_Pkt_Data_Counter[6];
+        CES_Pkt_Resp_Counter[3] = CES_Pkt_Data_Counter[7];
+
+        respdataTag = CES_Pkt_Data_Counter[8];
+
+        CES_Pkt_SpO2_Counter_IR[0] = CES_Pkt_Data_Counter[9];
+        CES_Pkt_SpO2_Counter_IR[1] = CES_Pkt_Data_Counter[10];
+        CES_Pkt_SpO2_Counter_IR[2] = CES_Pkt_Data_Counter[11];
+        CES_Pkt_SpO2_Counter_IR[3] = CES_Pkt_Data_Counter[12];
+
+        CES_Pkt_SpO2_Counter_RED[0] = CES_Pkt_Data_Counter[13];
+        CES_Pkt_SpO2_Counter_RED[1] = CES_Pkt_Data_Counter[14];
+        CES_Pkt_SpO2_Counter_RED[2] = CES_Pkt_Data_Counter[15];
+        CES_Pkt_SpO2_Counter_RED[3] = CES_Pkt_Data_Counter[16];
+
+        // temp = (float) ((int) CES_Pkt_Data_Counter[17]| CES_Pkt_Data_Counter[18]<<8)/100;
+
+        int data1 = CES_Pkt_ECG_Counter[0] | CES_Pkt_ECG_Counter[1] << 8 | CES_Pkt_ECG_Counter[2] << 16 | CES_Pkt_ECG_Counter[3] << 24; // reversePacket(CES_Pkt_ECG_Counter, CES_Pkt_ECG_Counter.length-1);
+        ecg = (int32_t)data1;
+
+        int data2 = CES_Pkt_Resp_Counter[0] | CES_Pkt_Resp_Counter[1] << 8 | CES_Pkt_Resp_Counter[2] << 16 | CES_Pkt_Resp_Counter[3] << 24; // reversePacket(CES_Pkt_ECG_Counter, CES_Pkt_ECG_Counter.length-1);
+        resp = (int32_t)data2;
+
+        int data3 = CES_Pkt_SpO2_Counter_IR[0] | CES_Pkt_SpO2_Counter_IR[1] << 8 | CES_Pkt_SpO2_Counter_IR[2] << 16 | CES_Pkt_SpO2_Counter_IR[3] << 24; // reversePacket(CES_Pkt_SpO2_Counter_IR, CES_Pkt_SpO2_Counter_IR.length-1);
+        spo2_ir = (int16_t)(data3 >> 8);
+        spo2_ir = spo2_ir;
+
+        int data4 = CES_Pkt_SpO2_Counter_RED[0] | CES_Pkt_SpO2_Counter_RED[1] << 8 | CES_Pkt_SpO2_Counter_RED[2] << 16 | CES_Pkt_SpO2_Counter_RED[3] << 24; // reversePacket(CES_Pkt_SpO2_Counter_RED, CES_Pkt_SpO2_Counter_RED.length-1);
+        spo2_red = (uint16_t)data4;
+
+        setData(ecg, resp, respdataTag, spo2_ir);
+
+        sp02 = (int)(CES_Pkt_Data_Counter[19]);
+        spo2_calc_done = true;
+
+        ecs_rx_state = CESState_Init;
+      }
+      else
+      {
+        ecs_rx_state = CESState_Init;
+      }
+    }
+    break;
+
+  default:
+    break;
   }
 }
 
-void setData(uint32_t ecg_sample, uint32_t bioz_sample, char resp_tag, uint16_t ppg_wave_ir) {
+void setData(uint32_t ecg_sample, uint32_t bioz_sample, char resp_tag, uint16_t ppg_wave_ir)
+{
 
   ecg_data_buff[ecg_stream_cnt++] = (uint8_t)ecg_sample;
   ecg_data_buff[ecg_stream_cnt++] = (uint8_t)(ecg_sample >> 8);
@@ -411,12 +433,14 @@ void setData(uint32_t ecg_sample, uint32_t bioz_sample, char resp_tag, uint16_t 
 
   resp_data_buff[resp_stream_cnt++] = resp_tag;
 
-  if (ecg_stream_cnt >= 38) {
+  if (ecg_stream_cnt >= 38)
+  {
     ecg_buf_ready = true;
     ecg_stream_cnt = 0;
   }
 
-  if (resp_stream_cnt >= 40) {
+  if (resp_stream_cnt >= 40)
+  {
     resp_buf_ready = true;
     resp_stream_cnt = 0;
   }
@@ -424,19 +448,20 @@ void setData(uint32_t ecg_sample, uint32_t bioz_sample, char resp_tag, uint16_t 
   ppg_data_buff[ppg_stream_cnt++] = (uint8_t)ppg_wave_ir;
   ppg_data_buff[ppg_stream_cnt++] = (uint8_t)(ppg_wave_ir >> 8);
 
-
-  if (ppg_stream_cnt >= 19) {
+  if (ppg_stream_cnt >= 19)
+  {
     ppg_buf_ready = true;
     ppg_stream_cnt = 0;
   }
 }
 
-void setup() {
+void setup()
+{
   delay(2000);
-  Serial.begin(115200);  // Baudrate for serial communication
+  Serial.begin(115200); // Baudrate for serial communication
   Serial.println("Setting up Healthy PI 5 with ESP32...");
 
-  Serial1.begin(115200, SERIAL_8N1, PIN_RP2040_TX_ESP32_RX, PIN_RP2040_RX_ESP32_TX, false, 20000UL, 112);
+  Serial1.begin(RP2040_ESP32_UART_BAUD, SERIAL_8N1, PIN_RP2040_TX_ESP32_RX, PIN_RP2040_RX_ESP32_TX, false, 20000UL, 112);
 
   HealthyPi5_BLE_Init();
 
@@ -445,15 +470,18 @@ void setup() {
 
 unsigned long prevCountTime = 0;
 
-void loop() {
+void loop()
+{
   unsigned long currentTime = millis();
 
-  if (Serial1.available()) {
+  if (Serial1.available())
+  {
     hPiProcessData(Serial1.read());
-    //Serial.write(Serial1.read());
+    // Serial.write(Serial1.read());
   }
 
-  if (currentTime - prevCountTime >= 20) {
+  if (currentTime - prevCountTime >= 8)
+  {
     handle_ble_stack();
     prevCountTime = currentTime;
   }
