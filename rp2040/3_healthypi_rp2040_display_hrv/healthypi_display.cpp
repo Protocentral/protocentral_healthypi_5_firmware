@@ -114,10 +114,10 @@ void HealthyPi_Display::do_set_scale()
     {
         if (chart1_update == true)
             lv_chart_set_range(chart1, LV_CHART_AXIS_PRIMARY_Y, y1_min, y1_max);
-        //if (chart2_update == true)
-        //    lv_chart_set_range(chart2, LV_CHART_AXIS_PRIMARY_Y, y2_min, y2_max);
-        //if (chart3_update == true)
-        //    lv_chart_set_range(chart3, LV_CHART_AXIS_PRIMARY_Y, y3_min, y3_max);
+        if (chart2_update == true)
+            lv_chart_set_range(chart2, LV_CHART_AXIS_PRIMARY_Y, y2_min, y2_max);
+        if (chart3_update == true)
+            lv_chart_set_range(chart3, LV_CHART_AXIS_PRIMARY_Y, y3_min, y3_max);
 
         gx = 0;
         y1_max = -100000;
@@ -172,7 +172,7 @@ void HealthyPi_Display::draw_plotRRI(float data_rri)
         sprintf(str, "X:%d Y:%d\n", (int)rri_prev, (int)data_rri);
         Serial.print(str);
         rri_prev = data_rri;
-        //char str[10];
+        // char str[10];
         sprintf(str, "%d", (int)data_rri);
         lv_label_set_text(label_RRI_number, str);
     }
@@ -333,9 +333,9 @@ void draw_footer(lv_obj_t *parent)
     lv_obj_align(label_symbols, LV_ALIGN_BOTTOM_LEFT, 5, -10);
 
     // Label for CO2 / VOC
-    //label_co2_voc = lv_label_create(parent);
-    //lv_label_set_text(label_co2_voc, "CO2: 400 VOC: 0");
-    //lv_obj_align(label_co2_voc, LV_ALIGN_BOTTOM_LEFT, 45, -10);
+    // label_co2_voc = lv_label_create(parent);
+    // lv_label_set_text(label_co2_voc, "CO2: 400 VOC: 0");
+    // lv_obj_align(label_co2_voc, LV_ALIGN_BOTTOM_LEFT, 45, -10);
 }
 
 void get_screen(enum hpi_scr_t get_scr)
@@ -506,7 +506,7 @@ void HealthyPi_Display::init_styles()
 
     lv_style_set_bg_color(&style_scr_back, lv_color_black());
 
-    //lv_style_set_bg_grad(&style_scr_back, &grad);
+    // lv_style_set_bg_grad(&style_scr_back, &grad);
 }
 
 void HealthyPi_Display::add_samples(int num_samples)
@@ -545,7 +545,7 @@ void HealthyPi_Display::draw_scr_charts_all(void)
     lv_obj_set_style_bg_color(chart2, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
 
     lv_obj_set_style_size(chart2, 0, LV_PART_INDICATOR);
-    lv_chart_set_point_count(chart2, DISP_WINDOW_SIZE / 2);
+    lv_chart_set_point_count(chart2, DISP_WINDOW_SIZE);
     // lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);   /*Show lines and points too*
     lv_chart_set_range(chart2, LV_CHART_AXIS_PRIMARY_Y, -1000, 1000);
     // lv_chart_set_range(chart1, LV_CHART_AXIS_SECONDARY_Y, 0, 1000);
@@ -560,7 +560,7 @@ void HealthyPi_Display::draw_scr_charts_all(void)
     lv_obj_set_style_bg_color(chart3, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
 
     lv_obj_set_style_size(chart3, 0, LV_PART_INDICATOR);
-    lv_chart_set_point_count(chart3, 128);
+    lv_chart_set_point_count(chart3, DISP_WINDOW_SIZE);
     // lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);   /*Show lines and points too*
     lv_chart_set_range(chart3, LV_CHART_AXIS_PRIMARY_Y, 0, 1000);
     // lv_chart_set_range(chart1, LV_CHART_AXIS_SECONDARY_Y, 0, 1000);
@@ -709,7 +709,7 @@ void HealthyPi_Display::draw_scr_hrv(void)
     chart3 = lv_chart_create(scr_hrv);
     lv_obj_set_size(chart3, 220, 110);
     lv_obj_set_style_bg_color(chart3, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
-     lv_chart_set_div_line_count(chart3, 0, 0);
+    lv_chart_set_div_line_count(chart3, 0, 0);
     // lv_obj_set_style_size(chart3, 0, LV_PART_INDICATOR);
     lv_chart_set_point_count(chart3, DISP_WINDOW_SIZE);
     // lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);   /*Show lines and points too*
@@ -723,8 +723,8 @@ void HealthyPi_Display::draw_scr_hrv(void)
     lv_obj_set_style_line_width(chart3, 0, LV_PART_ITEMS); /*Remove the lines*/
     lv_chart_set_type(chart3, LV_CHART_TYPE_SCATTER);
 
-    //lv_chart_set_axis_tick(chart3, LV_CHART_AXIS_PRIMARY_X, 5, 5, 5, 1, true, 30);
-    //lv_chart_set_axis_tick(chart3, LV_CHART_AXIS_PRIMARY_Y, 10, 5, 6, 5, true, 50);
+    // lv_chart_set_axis_tick(chart3, LV_CHART_AXIS_PRIMARY_X, 5, 5, 5, 1, true, 30);
+    // lv_chart_set_axis_tick(chart3, LV_CHART_AXIS_PRIMARY_Y, 10, 5, 6, 5, true, 50);
 
     lv_chart_set_range(chart3, LV_CHART_AXIS_PRIMARY_X, 200, 1600);
     lv_chart_set_range(chart3, LV_CHART_AXIS_PRIMARY_Y, 200, 1600);
@@ -764,7 +764,7 @@ void HealthyPi_Display::draw_scr_hrv(void)
     lv_obj_align_to(label_RRI_sub, label_RRI_number, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
     lv_obj_add_style(label_RRI_sub, &style_sub, LV_STATE_DEFAULT);
 
-     // SDNN label
+    // SDNN label
     lv_obj_t *label_SDNN_title = lv_label_create(scr_hrv);
     lv_label_set_text(label_SDNN_title, "SDNN");
     lv_obj_align_to(label_SDNN_title, label_RRI_title, LV_ALIGN_OUT_RIGHT_MID, 30, 0);

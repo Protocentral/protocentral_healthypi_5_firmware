@@ -55,7 +55,7 @@
 #define MAX30205_THYST 0x02         //
 #define MAX30205_TOS 0x03           //
 
-#define DISP_WINDOW_SIZE 512 // SAMPLE_RATE * 4
+#define DISP_WINDOW_SIZE 250 // SAMPLE_RATE * 4
 
 // Following pins are used for the display and defined in the User_Setup.h file
 // #define TFT_MISO -1

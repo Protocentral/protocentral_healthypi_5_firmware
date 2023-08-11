@@ -13,6 +13,23 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////
 
+/*
+
+Building this application
+
+* Required Libraries (install from Arduino Library Manager)
+* ProtoCentral AFE4490 by ProtoCentral Electronics
+* ProtoCentral MAX30001 by ProtoCentral Electronics
+* TFT_eSPI by Bodmer
+
+Copy "User_Setup_hpi5_2.h" into the TFT_eSPI library and set this file 
+as the default display (see here for more info: https://github.com/Bodmer/TFT_eSPI#tips )
+
+* **Important**: Change the "Optimize" setting in the "Tools" menu to "Optimize More (-O2)" or higher, 
+due to limitations with the LVGL library
+
+*/
+
 #include <SPI.h>
 #include <Wire.h>
 // #include <SD.h>
@@ -46,8 +63,8 @@ char DataPacket[30];
 static uint32_t plotTime = millis();
 
 // Packet format for communication with OpenView
-const char DataPacketHeader[] = {CES_CMDIF_PKT_START_1, CES_CMDIF_PKT_START_2, CES_CMDIF_DATA_LEN_LSB, CES_CMDIF_DATA_LEN_MSB, CES_CMDIF_TYPE_DATA};
-const char DataPacketFooter[] = {0x00, CES_CMDIF_PKT_STOP};
+const char DataPacketHeader[] = { CES_CMDIF_PKT_START_1, CES_CMDIF_PKT_START_2, CES_CMDIF_DATA_LEN_LSB, CES_CMDIF_DATA_LEN_MSB, CES_CMDIF_TYPE_DATA };
+const char DataPacketFooter[] = { 0x00, CES_CMDIF_PKT_STOP };
 
 signed long ecg_data;
 signed long bioz_data;
@@ -70,43 +87,41 @@ float ecgPlot = 0;
 float fltECGSamples[128];
 float fltBIOZSamples[128];
 
-#define PPG_READ_INTERVAL 8
+#define PPG_READ_INTERVAL 16
+#define ECG_READ_INTERVAL 8
 #define TEMP_READ_INTERVAL 1000
+#define RP2040_ESP32_UART_BAUD 230400
 
 #define TEMP_SENS_ADDRESS MAX30205_ADDRESS1
 
 unsigned long prevCountTime = 0;
 unsigned long prevTempCountTime = 0;
+unsigned long prevECGCountTime = 0;
 
-void send_data_serial_port(void)
-{
+void send_data_serial_port(void) {
 
-  for (int i = 0; i < 5; i++)
-  {
-    Serial.write(DataPacketHeader[i]); // transmit the data over USB
+  for (int i = 0; i < 5; i++) {
+    Serial.write(DataPacketHeader[i]);  // transmit the data over USB
     if (hpi_ble_enabled == true)
       Serial2.write(DataPacketHeader[i]);
   }
 
-  for (int i = 0; i < 20; i++)
-  {
-    Serial.write(DataPacket[i]); // transmit the data over USB
+  for (int i = 0; i < 20; i++) {
+    Serial.write(DataPacket[i]);  // transmit the data over USB
     if (hpi_ble_enabled == true)
       Serial2.write(DataPacket[i]);
   }
 
-  for (int i = 0; i < 2; i++)
-  {
-    Serial.write(DataPacketFooter[i]); // transmit the data over USB
+  for (int i = 0; i < 2; i++) {
+    Serial.write(DataPacketFooter[i]);  // transmit the data over USB
     if (hpi_ble_enabled == true)
       Serial2.write(DataPacketFooter[i]);
   }
 }
 
-void setup()
-{
+void setup() {
   // delay(2000);
-  Serial.begin(115200); // Baudrate for serial communication
+  Serial.begin(115200);  // Baudrate for serial communication
   Serial.println("Setting up Healthy PI 5...");
 
   // Set up MAX30001 pins
@@ -137,16 +152,15 @@ void setup()
   Wire1.setSCL(7);
   Wire1.begin();
 
-  i2c_write_byte(TEMP_SENS_ADDRESS, MAX30205_CONFIGURATION, 0x00); // mode config
-  i2c_write_byte(TEMP_SENS_ADDRESS, MAX30205_THYST, 0x00);         // set threshold
-  i2c_write_byte(TEMP_SENS_ADDRESS, MAX30205_TOS, 0x00);           //
+  i2c_write_byte(TEMP_SENS_ADDRESS, MAX30205_CONFIGURATION, 0x00);  // mode config
+  i2c_write_byte(TEMP_SENS_ADDRESS, MAX30205_THYST, 0x00);          // set threshold
+  i2c_write_byte(TEMP_SENS_ADDRESS, MAX30205_TOS, 0x00);            //
 
-  if (hpi_ble_enabled)
-  {
+  if (hpi_ble_enabled) {
     // Serial 1 -> UART0 connected to Raspberry Pi 40-pin header
     Serial2.setTX(PIN_RP2040_TX_ESP32_RX);
     Serial2.setRX(PIN_RP2040_RX_ESP32_TX);
-    Serial2.begin(115200);
+    Serial2.begin(RP2040_ESP32_UART_BAUD);
   }
 
   delay(100);
@@ -162,8 +176,7 @@ void setup()
   Serial.println("Init complete");
 }
 
-void setData(signed long ecg_sample, signed long bioz_sample, bool _bioZSkipSample)
-{
+void setData(signed long ecg_sample, signed long bioz_sample, bool _bioZSkipSample) {
   DataPacket[0] = ecg_sample;
   DataPacket[1] = ecg_sample >> 8;
   DataPacket[2] = ecg_sample >> 16;
@@ -174,21 +187,17 @@ void setData(signed long ecg_sample, signed long bioz_sample, bool _bioZSkipSamp
   DataPacket[6] = bioz_sample >> 16;
   DataPacket[7] = bioz_sample >> 24;
 
-  if (_bioZSkipSample == false)
-  {
+  if (_bioZSkipSample == false) {
     DataPacket[8] = 0x00;
-  }
-  else
-  {
+  } else {
     DataPacket[8] = 0xFF;
   }
 }
 
-void loop()
-{
+void loop() {
   unsigned long currentTime = millis();
 
-  max30001.max30001ServiceAllInterrupts();
+  /*max30001.max30001ServiceAllInterrupts();
   if (true) //(max30001.ecgSamplesAvailable > 0)
   {
     for (int i = 0; i < max30001.ecgSamplesAvailable; i++)
@@ -226,51 +235,65 @@ void loop()
     hpi_display.draw_plotresp(fltBIOZSamples, max30001.biozSamplesAvailable);
 
     max30001.biozSamplesAvailable = 0;
-  }
+  }*/
 
-  // gx++;
+
+
 
   // send_data_serial_port();
 
   // Sample PPG every 8 ms
-  if (currentTime - prevCountTime >= PPG_READ_INTERVAL)
-  {
+  if ((currentTime - prevCountTime) >= PPG_READ_INTERVAL) {
 
-    afe44xx.get_AFE44XX_Data(&afe44xx_raw_data);
+    //if ((currentTime - prevECGCountTime) >= ECG_READ_INTERVAL) {
+    signed long ecg_data = 0; 
+    signed long bioz_data = 0;
+
+    ecg_data = max30001.getECGSamples();
+
+
+    /*afe44xx.get_AFE44XX_Data(&afe44xx_raw_data);
     ppg_wave_ir = (int16_t)(afe44xx_raw_data.IR_data >> 8);
     ppg_wave_ir = ppg_wave_ir;
 
     signed long ppgVal1 = (afe44xx_raw_data.RED_data >> 8);
 
-    redPlot = (float)(ppgVal1); // = (float) map(ppgVal1, (float)1000, (float)2500.0, (float)0.0, (float)100.0);
+    redPlot = (float)(ppgVal1);  // = (float) map(ppgVal1, (float)1000, (float)2500.0, (float)0.0, (float)100.0);
     // float redPlot1 = ppgVal1/100000;
 
     ppg_data_buff[ppg_stream_cnt++] = (uint8_t)ppg_wave_ir;
     ppg_data_buff[ppg_stream_cnt++] = (ppg_wave_ir >> 8);
 
-    if (ppg_stream_cnt >= 19)
-    {
+    if (ppg_stream_cnt >= 19) {
       ppg_buf_ready = true;
       ppg_stream_cnt = 1;
     }
 
     memcpy(&DataPacket[9], &afe44xx_raw_data.IR_data, sizeof(signed long));
     memcpy(&DataPacket[13], &afe44xx_raw_data.RED_data, sizeof(signed long));
+    */
 
-    // draw_plotppg(redPlot);
-    hpi_display.draw_plotppg(redPlot);
+    hpi_display.draw_plotECG(ecg_data);
+    //hpi_display.draw_plotppg(redPlot);
 
-    if (afe44xx_raw_data.buffer_count_overflow)
-    {
+    if (BioZSkipSample == false) {
+      bioz_data = max30001.getBioZSamples();
+      hpi_display.draw_plotresp(bioz_data);
+      setData(ecg_data, bioz_data, BioZSkipSample);
+      BioZSkipSample = true;
+    } else {
+      bioz_data = 0x00;
+      setData(ecg_data, bioz_data, BioZSkipSample);
+      BioZSkipSample = false;
+    }
 
-      if (afe44xx_raw_data.spo2 == -999)
-      {
+    if (afe44xx_raw_data.buffer_count_overflow) {
+
+      if (afe44xx_raw_data.spo2 == -999) {
         DataPacket[19] = 0;
         sp02 = 0;
         hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, false);
-      }
-      else
-      {
+      } else {
         DataPacket[19] = afe44xx_raw_data.spo2;
         // sp02 = (uint8_t)afe44xx_raw_data.spo2;
         hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, true);
@@ -281,57 +304,54 @@ void loop()
       spo2_calc_done = true;
       afe44xx_raw_data.buffer_count_overflow = false;
     }
+    //}
 
     prevCountTime = currentTime;
+
+    hpi_display.add_samples(1);
+    hpi_display.do_set_scale();
   }
 
-  if (currentTime - prevTempCountTime >= TEMP_READ_INTERVAL)
-  {
+  if (currentTime - prevTempCountTime >= TEMP_READ_INTERVAL) {
     float tread = getTemperature();
     hpi_display.updateTemp(tread);
     prevTempCountTime = currentTime;
   }
 
-  hpi_display.do_set_scale();
+  lv_timer_handler();
+  send_data_serial_port();
 
-  lv_timer_handler(); /* let the GUI do its work */
-
-  // delay(1);
+  //delay(1);
 }
 
-float mapValue(float ip, float ipmin, float ipmax, float tomin, float tomax)
-{
+float mapValue(float ip, float ipmin, float ipmax, float tomin, float tomax) {
   return tomin + (((tomax - tomin) * (ip - ipmin)) / (ipmax - ipmin));
 }
 
-float getTemperature(void)
-{
-  uint8_t readRaw[2] = {0};
-  i2c_read_bytes(TEMP_SENS_ADDRESS, MAX30205_TEMPERATURE, &readRaw[0], 2); // read two bytes
-  int16_t raw = readRaw[0] << 8 | readRaw[1];                              // combine two bytes
-  float temperature = raw * 0.00390625;                                    // convert to temperature
+float getTemperature(void) {
+  uint8_t readRaw[2] = { 0 };
+  i2c_read_bytes(TEMP_SENS_ADDRESS, MAX30205_TEMPERATURE, &readRaw[0], 2);  // read two bytes
+  int16_t raw = readRaw[0] << 8 | readRaw[1];                               // combine two bytes
+  float temperature = raw * 0.00390625;                                     // convert to temperature
   return temperature;
 }
 
-void i2c_read_bytes(uint8_t address, uint8_t subAddress, uint8_t *dest, uint8_t count)
-{
-  Wire1.beginTransmission(address); // Initialize the Tx buffer
+void i2c_read_bytes(uint8_t address, uint8_t subAddress, uint8_t *dest, uint8_t count) {
+  Wire1.beginTransmission(address);  // Initialize the Tx buffer
   // Next send the register to be read. OR with 0x80 to indicate multi-read.
   Wire1.write(subAddress);
   Wire1.endTransmission(false);
   uint8_t i = 0;
-  Wire1.requestFrom(address, count); // Read bytes from slave register address
-  while (Wire1.available())
-  {
+  Wire1.requestFrom(address, count);  // Read bytes from slave register address
+  while (Wire1.available()) {
     dest[i++] = Wire1.read();
   }
 }
 
 // Wire.h read and write protocols
-void i2c_write_byte(uint8_t address, uint8_t subAddress, uint8_t data)
-{
-  Wire1.beginTransmission(address); // Initialize the Tx buffer
-  Wire1.write(subAddress);          // Put slave register address in Tx buffer
-  Wire1.write(data);                // Put data in Tx buffer
-  Wire1.endTransmission();          // Send the Tx buffer
+void i2c_write_byte(uint8_t address, uint8_t subAddress, uint8_t data) {
+  Wire1.beginTransmission(address);  // Initialize the Tx buffer
+  Wire1.write(subAddress);           // Put slave register address in Tx buffer
+  Wire1.write(data);                 // Put data in Tx buffer
+  Wire1.endTransmission();           // Send the Tx buffer
 }

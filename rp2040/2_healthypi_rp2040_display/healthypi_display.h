@@ -30,12 +30,15 @@ private:
 public:
     void init();
     void draw_plotECG(float *data_ecg, int num_samples);
+    void draw_plotECG(float data_ecg);
     void draw_plotresp(float *data_resp, int num_samples);
+    void draw_plotresp(float data_resp); 
     void draw_plotppg(float data_ppg);
     void draw_main_menu(void);
     void draw_scr_hrv(void);
 
     void draw_scr_charts_all(void);
+    void draw_scr_charts_ppg_only(void);
 
     void updateEnv(int co2, int voc);
     void updateTemp(float temp);
