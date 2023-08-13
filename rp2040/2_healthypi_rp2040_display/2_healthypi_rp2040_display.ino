@@ -197,7 +197,7 @@ void setData(signed long ecg_sample, signed long bioz_sample, bool _bioZSkipSamp
 void loop() {
   unsigned long currentTime = millis();
 
-  /*max30001.max30001ServiceAllInterrupts();
+  max30001.max30001ServiceAllInterrupts();
   if (true) //(max30001.ecgSamplesAvailable > 0)
   {
     for (int i = 0; i < max30001.ecgSamplesAvailable; i++)
@@ -216,6 +216,11 @@ void loop() {
     hpi_display.add_samples(max30001.ecgSamplesAvailable);
     // gx += max30001.ecgSamplesAvailable;
     max30001.ecgSamplesAvailable = 0;
+
+   
+
+    //hpi_display.add_samples(1);
+    hpi_display.do_set_scale();
   }
 
   if (max30001.biozSamplesAvailable > 0)
@@ -235,10 +240,7 @@ void loop() {
     hpi_display.draw_plotresp(fltBIOZSamples, max30001.biozSamplesAvailable);
 
     max30001.biozSamplesAvailable = 0;
-  }*/
-
-
-
+  }
 
   // send_data_serial_port();
 
@@ -249,7 +251,7 @@ void loop() {
     signed long ecg_data = 0; 
     signed long bioz_data = 0;
 
-    ecg_data = max30001.getECGSamples();
+    //ecg_data = max30001.getECGSamples();
 
 
     /*afe44xx.get_AFE44XX_Data(&afe44xx_raw_data);
@@ -273,10 +275,10 @@ void loop() {
     memcpy(&DataPacket[13], &afe44xx_raw_data.RED_data, sizeof(signed long));
     */
 
-    hpi_display.draw_plotECG(ecg_data);
+    //hpi_display.draw_plotECG(ecg_data);
     //hpi_display.draw_plotppg(redPlot);
 
-    if (BioZSkipSample == false) {
+    /*if (BioZSkipSample == false) {
       bioz_data = max30001.getBioZSamples();
       hpi_display.draw_plotresp(bioz_data);
       setData(ecg_data, bioz_data, BioZSkipSample);
@@ -285,7 +287,7 @@ void loop() {
       bioz_data = 0x00;
       setData(ecg_data, bioz_data, BioZSkipSample);
       BioZSkipSample = false;
-    }
+    }*/
 
     if (afe44xx_raw_data.buffer_count_overflow) {
 
@@ -304,12 +306,11 @@ void loop() {
       spo2_calc_done = true;
       afe44xx_raw_data.buffer_count_overflow = false;
     }
+
+     prevCountTime = currentTime;
     //}
 
-    prevCountTime = currentTime;
-
-    hpi_display.add_samples(1);
-    hpi_display.do_set_scale();
+    
   }
 
   if (currentTime - prevTempCountTime >= TEMP_READ_INTERVAL) {
@@ -319,7 +320,7 @@ void loop() {
   }
 
   lv_timer_handler();
-  send_data_serial_port();
+  //send_data_serial_port();
 
   //delay(1);
 }

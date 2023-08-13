@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////
-//   Arduino program for HealthyPi 5 to Work in Streaming mode with Raspberry Pi RP2040 
+//   Arduino program for HealthyPi 5 to Work in Streaming mode with Raspberry Pi RP2040
 //
 //   Copyright (c) 2022 ProtoCentral
 //
@@ -60,12 +60,12 @@ char DataPacket[30];
 #define PIN_RP2040_TX_ESP32_RX 24
 #define PIN_RP2040_RX_ESP32_TX 25
 
-#define RP2040_ESP32_UART_BAUD  230400
+#define RP2040_ESP32_UART_BAUD 230400
 
 #define ZERO 0
 // volatile char DataPacket[DATA_LEN];
-const char DataPacketHeader[] = {CES_CMDIF_PKT_START_1, CES_CMDIF_PKT_START_2, CES_CMDIF_DATA_LEN_LSB, CES_CMDIF_DATA_LEN_MSB, CES_CMDIF_TYPE_DATA};
-const char DataPacketFooter[] = {ZERO, CES_CMDIF_PKT_STOP};
+const char DataPacketHeader[] = { CES_CMDIF_PKT_START_1, CES_CMDIF_PKT_START_2, CES_CMDIF_DATA_LEN_LSB, CES_CMDIF_DATA_LEN_MSB, CES_CMDIF_TYPE_DATA };
+const char DataPacketFooter[] = { ZERO, CES_CMDIF_PKT_STOP };
 
 signed long ecg_data;
 signed long bioz_data;
@@ -78,35 +78,30 @@ afe44xx_data afe44xx_raw_data;
 
 const bool hpi_ble_enabled = true;
 
-void send_data_serial_port(void)
-{
+void send_data_serial_port(void) {
 
-  for (int i = 0; i < 5; i++)
-  {
-    Serial.write(DataPacketHeader[i]); // transmit the data over USB
+  for (int i = 0; i < 5; i++) {
+    Serial.write(DataPacketHeader[i]);  // transmit the data over USB
     if (hpi_ble_enabled == true)
       Serial2.write(DataPacketHeader[i]);
   }
 
-  for (int i = 0; i < 20; i++)
-  {
-    Serial.write(DataPacket[i]); // transmit the data over USB
+  for (int i = 0; i < 20; i++) {
+    Serial.write(DataPacket[i]);  // transmit the data over USB
     if (hpi_ble_enabled == true)
       Serial2.write(DataPacket[i]);
   }
 
-  for (int i = 0; i < 2; i++)
-  {
-    Serial.write(DataPacketFooter[i]); // transmit the data over USB
+  for (int i = 0; i < 2; i++) {
+    Serial.write(DataPacketFooter[i]);  // transmit the data over USB
     if (hpi_ble_enabled == true)
       Serial2.write(DataPacketFooter[i]);
   }
 }
 
-void setup()
-{
+void setup() {
   delay(2000);
-  Serial.begin(115200); // Baudrate for serial communication
+  Serial.begin(115200);  // Baudrate for serial communication
   Serial.println("Setting up Healthy PI 5...");
 
   pinMode(MAX30001_CS_PIN, OUTPUT);
@@ -117,8 +112,7 @@ void setup()
   SPI.setSCK(SPI_SCK_PIN);
   SPI.begin();
 
-  if (hpi_ble_enabled)
-  {
+  if (hpi_ble_enabled) {
     // Serial 1 -> UART0 connected to Raspberry Pi 40-pin header
     Serial2.setTX(PIN_RP2040_TX_ESP32_RX);
     Serial2.setRX(PIN_RP2040_RX_ESP32_TX);
@@ -134,8 +128,7 @@ void setup()
   Serial.println("Initialization is complete");
 }
 
-void setData(signed long ecg_sample, signed long bioz_sample, bool _bioZSkipSample)
-{
+void setData(signed long ecg_sample, signed long bioz_sample, bool _bioZSkipSample) {
 
   DataPacket[0] = ecg_sample;
   DataPacket[1] = ecg_sample >> 8;
@@ -147,18 +140,14 @@ void setData(signed long ecg_sample, signed long bioz_sample, bool _bioZSkipSamp
   DataPacket[6] = bioz_sample >> 16;
   DataPacket[7] = bioz_sample >> 24;
 
-  if (_bioZSkipSample == false)
-  {
+  if (_bioZSkipSample == false) {
     DataPacket[8] = 0x00;
-  }
-  else
-  {
+  } else {
     DataPacket[8] = 0xFF;
   }
 }
 
-void loop()
-{
+void loop() {
   afe44xx.get_AFE44XX_Data(&afe44xx_raw_data);
   ppg_wave_ir = (int16_t)(afe44xx_raw_data.IR_data >> 8);
   ppg_wave_ir = ppg_wave_ir;
@@ -166,8 +155,7 @@ void loop()
   ppg_data_buff[ppg_stream_cnt++] = (uint8_t)ppg_wave_ir;
   ppg_data_buff[ppg_stream_cnt++] = (ppg_wave_ir >> 8);
 
-  if (ppg_stream_cnt >= 19)
-  {
+  if (ppg_stream_cnt >= 19) {
     ppg_buf_ready = true;
     ppg_stream_cnt = 1;
   }
@@ -175,16 +163,12 @@ void loop()
   memcpy(&DataPacket[9], &afe44xx_raw_data.IR_data, sizeof(signed long));
   memcpy(&DataPacket[13], &afe44xx_raw_data.RED_data, sizeof(signed long));
 
-  if (afe44xx_raw_data.buffer_count_overflow)
-  {
+  if (afe44xx_raw_data.buffer_count_overflow) {
 
-    if (afe44xx_raw_data.spo2 == -999)
-    {
+    if (afe44xx_raw_data.spo2 == -999) {
       DataPacket[19] = 0;
       sp02 = 0;
-    }
-    else
-    {
+    } else {
       DataPacket[19] = afe44xx_raw_data.spo2;
       sp02 = (uint8_t)afe44xx_raw_data.spo2;
     }
@@ -195,14 +179,11 @@ void loop()
 
   ecg_data = max30001.getECGSamples();
 
-  if (BioZSkipSample == false)
-  {
+  if (BioZSkipSample == false) {
     bioz_data = max30001.getBioZSamples();
     setData(ecg_data, bioz_data, BioZSkipSample);
     BioZSkipSample = true;
-  }
-  else
-  {
+  } else {
     bioz_data = 0x00;
     setData(ecg_data, bioz_data, BioZSkipSample);
     BioZSkipSample = false;
