@@ -71,6 +71,9 @@ signed long bioz_data;
 
 uint8_t global_spo2 = 96;
 
+float ecg_mult =  0.00004768;  //VREF=1000 mV, GAIN=160 V/V
+float resp_mult = 1.49011612;
+
 MAX30001 max30001(MAX30001_CS_PIN);
 AFE44XX afe44xx(AFE44XX_CS_PIN, AFE44XX_PWDN_PIN);
 HealthyPi_Display hpi_display;
@@ -87,7 +90,7 @@ float ecgPlot = 0;
 float fltECGSamples[128];
 float fltBIOZSamples[128];
 
-#define PPG_READ_INTERVAL 16
+#define PPG_READ_INTERVAL 8
 #define ECG_READ_INTERVAL 8
 #define TEMP_READ_INTERVAL 1000
 #define RP2040_ESP32_UART_BAUD 230400
@@ -95,6 +98,8 @@ float fltBIOZSamples[128];
 #define TEMP_SENS_ADDRESS MAX30205_ADDRESS1
 
 unsigned long prevCountTime = 0;
+unsigned long prevCountTime1 = 0;
+
 unsigned long prevTempCountTime = 0;
 unsigned long prevECGCountTime = 0;
 
@@ -198,38 +203,37 @@ void loop() {
   unsigned long currentTime = millis();
 
   max30001.max30001ServiceAllInterrupts();
-  if (true) //(max30001.ecgSamplesAvailable > 0)
-  {
-    for (int i = 0; i < max30001.ecgSamplesAvailable; i++)
-    {
-      fltECGSamples[i] = (float)(max30001.s32ECGData[i] / 100);
-      // setData(max30001.s32ECGData[i], 0, false);
+  if (max30001.ecgSamplesAvailable > 0) {
+    for (int i = 0; i < max30001.ecgSamplesAvailable; i++) {
+      fltECGSamples[i] = (float)(max30001.s32ECGData[i] * ecg_mult);
+      setData(max30001.s32ECGData[i], 0, false);
       // send_data_serial_port();
+      hpi_display.draw_plotECG(fltECGSamples[i]);
     }
+    hpi_display.add_samples(max30001.ecgSamplesAvailable);
+    //hpi_display.add_samples();
+    hpi_display.do_set_scale();
     // Serial.print("ECG:");
     // Serial.println(max30001.ecgSamplesAvailable);
     // draw_plotECG(fltECGSamples, max30001.ecgSamplesAvailable);
 
     // draw_plotECG(fltECGSamples, max30001.ecgSamplesAvailable);
-    hpi_display.draw_plotECG(fltECGSamples, max30001.ecgSamplesAvailable);
+    //hpi_display.draw_plotECG(fltECGSamples, max30001.ecgSamplesAvailable);
 
-    hpi_display.add_samples(max30001.ecgSamplesAvailable);
+    //hpi_display.add_samples(max30001.ecgSamplesAvailable);
     // gx += max30001.ecgSamplesAvailable;
     max30001.ecgSamplesAvailable = 0;
 
-   
-
     //hpi_display.add_samples(1);
-    hpi_display.do_set_scale();
   }
-
+  
   if (max30001.biozSamplesAvailable > 0)
   {
     for (int i = 0; i < max30001.biozSamplesAvailable; i++)
     {
-      fltBIOZSamples[i] = (float)(max30001.s32BIOZData[i] / 100);
-
-      // setData(max30001.s32BIOZData[i], 0, false);
+      fltBIOZSamples[i] = (float)(max30001.s32BIOZData[i]*resp_mult);
+      setData(max30001.s32BIOZData[i], 0, false);
+      hpi_display.draw_plotresp(fltBIOZSamples[i]);//, max30001.biozSamplesAvailable);
       // send_data_serial_port();
     }
     // Serial.print("ECG:");
@@ -237,24 +241,44 @@ void loop() {
     // draw_plotECG(fltECGSamples, max30001.ecgSamplesAvailable);
 
     // draw_plotresp(fltBIOZSamples, max30001.biozSamplesAvailable);
-    hpi_display.draw_plotresp(fltBIOZSamples, max30001.biozSamplesAvailable);
+    //hpi_display.draw_plotresp(fltBIOZSamples, max30001.biozSamplesAvailable);
 
     max30001.biozSamplesAvailable = 0;
   }
+  
+  
+  /*  ecg_data = max30001.getECGSamples();
 
-  // send_data_serial_port();
+  float fl_ecg_data = ecg_data * ecg_mult;
 
-  // Sample PPG every 8 ms
+  hpi_display.draw_plotECG(fl_ecg_data);
+
+  hpi_display.add_samples(1);
+  hpi_display.do_set_scale();
+
+  if (BioZSkipSample == false) {
+    bioz_data = max30001.getBioZSamples();
+    setData(ecg_data, bioz_data, BioZSkipSample);
+    BioZSkipSample = true;
+  } else {
+    bioz_data = 0x00;
+    setData(ecg_data, bioz_data, BioZSkipSample);
+    BioZSkipSample = false;
+  }*/
+
+  if (currentTime - prevTempCountTime >= TEMP_READ_INTERVAL) {
+    float tread = getTemperature();
+    hpi_display.updateTemp(tread);
+    prevTempCountTime = currentTime;
+  }
+
+  //rp2040.idleOtherCore();
+  //send_data_serial_port();
+  //rp2040.resumeOtherCore();
+
   if ((currentTime - prevCountTime) >= PPG_READ_INTERVAL) {
 
-    //if ((currentTime - prevECGCountTime) >= ECG_READ_INTERVAL) {
-    signed long ecg_data = 0; 
-    signed long bioz_data = 0;
-
-    //ecg_data = max30001.getECGSamples();
-
-
-    /*afe44xx.get_AFE44XX_Data(&afe44xx_raw_data);
+    afe44xx.get_AFE44XX_Data(&afe44xx_raw_data);
     ppg_wave_ir = (int16_t)(afe44xx_raw_data.IR_data >> 8);
     ppg_wave_ir = ppg_wave_ir;
 
@@ -273,56 +297,43 @@ void loop() {
 
     memcpy(&DataPacket[9], &afe44xx_raw_data.IR_data, sizeof(signed long));
     memcpy(&DataPacket[13], &afe44xx_raw_data.RED_data, sizeof(signed long));
-    */
 
     //hpi_display.draw_plotECG(ecg_data);
     //hpi_display.draw_plotppg(redPlot);
-
-    /*if (BioZSkipSample == false) {
-      bioz_data = max30001.getBioZSamples();
-      hpi_display.draw_plotresp(bioz_data);
-      setData(ecg_data, bioz_data, BioZSkipSample);
-      BioZSkipSample = true;
-    } else {
-      bioz_data = 0x00;
-      setData(ecg_data, bioz_data, BioZSkipSample);
-      BioZSkipSample = false;
-    }*/
 
     if (afe44xx_raw_data.buffer_count_overflow) {
 
       if (afe44xx_raw_data.spo2 == -999) {
         DataPacket[19] = 0;
         sp02 = 0;
-        hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, false);
+        //hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, false);
       } else {
         DataPacket[19] = afe44xx_raw_data.spo2;
         // sp02 = (uint8_t)afe44xx_raw_data.spo2;
-        hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, true);
-        hpi_display.updateHR((uint8_t)80);
-        hpi_display.updateRR((uint8_t)20);
+        //hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, true);
+        //hpi_display.updateHR((uint8_t)80);
+        //hpi_display.updateRR((uint8_t)20);
       }
 
       spo2_calc_done = true;
       afe44xx_raw_data.buffer_count_overflow = false;
+      
     }
-
-     prevCountTime = currentTime;
+    //send_data_serial_port();
     //}
-
-    
+    prevCountTime = currentTime;
   }
 
-  if (currentTime - prevTempCountTime >= TEMP_READ_INTERVAL) {
-    float tread = getTemperature();
-    hpi_display.updateTemp(tread);
-    prevTempCountTime = currentTime;
-  }
+  send_data_serial_port();
 
   lv_timer_handler();
-  //send_data_serial_port();
+  delay(8);
+}
 
-  //delay(1);
+void loop1() {
+  unsigned long currentTime1 = millis();
+  // Sample PPG every 8 ms
+  
 }
 
 float mapValue(float ip, float ipmin, float ipmax, float tomin, float tomax) {
