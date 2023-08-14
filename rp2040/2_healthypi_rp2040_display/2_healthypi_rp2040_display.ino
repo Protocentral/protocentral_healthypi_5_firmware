@@ -71,7 +71,7 @@ signed long bioz_data;
 
 uint8_t global_spo2 = 96;
 
-float ecg_mult =  0.00004768;  //VREF=1000 mV, GAIN=160 V/V
+float ecg_mult = 0.00004768;  //VREF=1000 mV, GAIN=160 V/V
 float resp_mult = 1.49011612;
 
 MAX30001 max30001(MAX30001_CS_PIN);
@@ -202,6 +202,47 @@ void setData(signed long ecg_sample, signed long bioz_sample, bool _bioZSkipSamp
 void loop() {
   unsigned long currentTime = millis();
 
+  afe44xx.get_AFE44XX_Data(&afe44xx_raw_data);
+  ppg_wave_ir = (int16_t)(afe44xx_raw_data.IR_data >> 8);
+  ppg_wave_ir = ppg_wave_ir;
+
+  //signed long ppgVal1 = (afe44xx_raw_data.RED_data >> 8);
+
+  //redPlot = (float)(ppgVal1);  // = (float) map(ppgVal1, (float)1000, (float)2500.0, (float)0.0, (float)100.0);
+  // float redPlot1 = ppgVal1/100000;
+
+  ppg_data_buff[ppg_stream_cnt++] = (uint8_t)ppg_wave_ir;
+  ppg_data_buff[ppg_stream_cnt++] = (ppg_wave_ir >> 8);
+
+  if (ppg_stream_cnt >= 19) {
+    ppg_buf_ready = true;
+    ppg_stream_cnt = 1;
+  }
+
+  memcpy(&DataPacket[9], &afe44xx_raw_data.IR_data, sizeof(signed long));
+  memcpy(&DataPacket[13], &afe44xx_raw_data.RED_data, sizeof(signed long));
+
+  //hpi_display.draw_plotECG(ecg_data);
+  //hpi_display.draw_plotppg(redPlot);
+
+  if (afe44xx_raw_data.buffer_count_overflow) {
+
+    if (afe44xx_raw_data.spo2 == -999) {
+      DataPacket[19] = 0;
+      sp02 = 0;
+      hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, false);
+    } else {
+      DataPacket[19] = afe44xx_raw_data.spo2;
+      sp02 = (uint8_t)afe44xx_raw_data.spo2;
+      hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, true);
+      hpi_display.updateHR((uint8_t)80);
+      hpi_display.updateRR((uint8_t)20);
+    }
+
+    spo2_calc_done = true;
+    afe44xx_raw_data.buffer_count_overflow = false;
+  }
+
   max30001.max30001ServiceAllInterrupts();
   if (max30001.ecgSamplesAvailable > 0) {
     for (int i = 0; i < max30001.ecgSamplesAvailable; i++) {
@@ -226,14 +267,12 @@ void loop() {
 
     //hpi_display.add_samples(1);
   }
-  
-  if (max30001.biozSamplesAvailable > 0)
-  {
-    for (int i = 0; i < max30001.biozSamplesAvailable; i++)
-    {
-      fltBIOZSamples[i] = (float)(max30001.s32BIOZData[i]*resp_mult);
+
+  if (max30001.biozSamplesAvailable > 0) {
+    for (int i = 0; i < max30001.biozSamplesAvailable; i++) {
+      fltBIOZSamples[i] = (float)(max30001.s32BIOZData[i] * resp_mult);
       setData(max30001.s32BIOZData[i], 0, false);
-      hpi_display.draw_plotresp(fltBIOZSamples[i]);//, max30001.biozSamplesAvailable);
+      hpi_display.draw_plotresp(fltBIOZSamples[i]);  //, max30001.biozSamplesAvailable);
       // send_data_serial_port();
     }
     // Serial.print("ECG:");
@@ -245,8 +284,8 @@ void loop() {
 
     max30001.biozSamplesAvailable = 0;
   }
-  
-  
+
+
   /*  ecg_data = max30001.getECGSamples();
 
   float fl_ecg_data = ecg_data * ecg_mult;
@@ -272,68 +311,10 @@ void loop() {
     prevTempCountTime = currentTime;
   }
 
-  //rp2040.idleOtherCore();
-  //send_data_serial_port();
-  //rp2040.resumeOtherCore();
-
-  if ((currentTime - prevCountTime) >= PPG_READ_INTERVAL) {
-
-    afe44xx.get_AFE44XX_Data(&afe44xx_raw_data);
-    ppg_wave_ir = (int16_t)(afe44xx_raw_data.IR_data >> 8);
-    ppg_wave_ir = ppg_wave_ir;
-
-    signed long ppgVal1 = (afe44xx_raw_data.RED_data >> 8);
-
-    redPlot = (float)(ppgVal1);  // = (float) map(ppgVal1, (float)1000, (float)2500.0, (float)0.0, (float)100.0);
-    // float redPlot1 = ppgVal1/100000;
-
-    ppg_data_buff[ppg_stream_cnt++] = (uint8_t)ppg_wave_ir;
-    ppg_data_buff[ppg_stream_cnt++] = (ppg_wave_ir >> 8);
-
-    if (ppg_stream_cnt >= 19) {
-      ppg_buf_ready = true;
-      ppg_stream_cnt = 1;
-    }
-
-    memcpy(&DataPacket[9], &afe44xx_raw_data.IR_data, sizeof(signed long));
-    memcpy(&DataPacket[13], &afe44xx_raw_data.RED_data, sizeof(signed long));
-
-    //hpi_display.draw_plotECG(ecg_data);
-    //hpi_display.draw_plotppg(redPlot);
-
-    if (afe44xx_raw_data.buffer_count_overflow) {
-
-      if (afe44xx_raw_data.spo2 == -999) {
-        DataPacket[19] = 0;
-        sp02 = 0;
-        //hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, false);
-      } else {
-        DataPacket[19] = afe44xx_raw_data.spo2;
-        // sp02 = (uint8_t)afe44xx_raw_data.spo2;
-        //hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, true);
-        //hpi_display.updateHR((uint8_t)80);
-        //hpi_display.updateRR((uint8_t)20);
-      }
-
-      spo2_calc_done = true;
-      afe44xx_raw_data.buffer_count_overflow = false;
-      
-    }
-    //send_data_serial_port();
-    //}
-    prevCountTime = currentTime;
-  }
-
   send_data_serial_port();
 
   lv_timer_handler();
   delay(8);
-}
-
-void loop1() {
-  unsigned long currentTime1 = millis();
-  // Sample PPG every 8 ms
-  
 }
 
 float mapValue(float ip, float ipmin, float ipmax, float tomin, float tomax) {

@@ -102,7 +102,7 @@ void HealthyPi_Display::init() {
   // draw_scr_charts_ecg_only();
   //    lv_scr_load(scr_all_charts);
   //    lv_scr_load(scr_main_menu);
-    get_screen(SCR_CHARTS_ALL);
+  get_screen(SCR_CHARTS_ALL);
   //  get_screen(SCR_CHARTS_PPG);
 
   //get_screen(SCR_CHARTS_PPG);
@@ -280,8 +280,11 @@ void draw_footer(lv_obj_t *parent) {
   // Label for Symbols
   lv_obj_t *label_symbols = lv_label_create(parent);
   lv_label_set_text(label_symbols, LV_SYMBOL_BATTERY_FULL " " LV_SYMBOL_BLUETOOTH);
-  lv_obj_align(label_symbols, LV_ALIGN_BOTTOM_RIGHT, 5, -10);
+  lv_obj_align(label_symbols, LV_ALIGN_BOTTOM_RIGHT, -15, 0);
 
+  lv_obj_t *label_menu = lv_label_create(scr_charts_all);
+  lv_label_set_text(label_menu, "Press side wheel UP/DOWN for more charts");
+  lv_obj_align(label_menu, LV_ALIGN_BOTTOM_MID, 0, 0);
 }
 
 void get_screen(enum hpi_scr_t get_scr) {
@@ -382,7 +385,7 @@ void HealthyPi_Display::init_styles() {
   // Subscript (Unit) label style
   lv_style_init(&style_sub);
   lv_style_set_text_color(&style_sub, lv_color_white());
-  lv_style_set_text_font(&style_sub, &lv_font_montserrat_14);
+  lv_style_set_text_font(&style_sub, &lv_font_montserrat_16);
 
   // HR Number label style
   lv_style_init(&style_hr);
@@ -454,24 +457,18 @@ void HealthyPi_Display::draw_scr_charts_single(void) {
 
   lv_obj_set_pos(chart1, 10, 4);
 
+  static lv_obj_t *label_chart_title = lv_label_create(scr_charts_all);
+  lv_label_set_text(label_chart_title, "Showing ECG");
+  lv_obj_align_to(label_chart_title, chart1, LV_ALIGN_OUT_TOP_MID, 0, 20);
+  //lv_obj_add_style(label_rr_sub, &style_sub, LV_STATE_DEFAULT);
+
   /* Data Series for 3 plots*/
   ser1 = lv_chart_add_series(chart1, lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_PRIMARY_Y);
- 
-  /*
-    // Button to switch to other screens
-    lv_obj_t *btn1 = lv_btn_create(scr_charts_all);
-    lv_obj_add_event_cb(btn1, btn1_cb, LV_EVENT_ALL, NULL);
-    lv_obj_align_to(btn1, chart3, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
-
-    lv_obj_t *label = lv_label_create(btn1);
-    lv_label_set_text(label, "Push button for other charts");
-    lv_obj_center(label);
-    */
 
   // HR Number label
   label_hr = lv_label_create(scr_charts_all);
-  lv_label_set_text(label_hr, "--");
-  lv_obj_align_to(label_hr, chart1, LV_ALIGN_OUT_BOTTOM_LEFT, 25, 25);
+  lv_label_set_text(label_hr, "83");
+  lv_obj_align_to(label_hr, chart1, LV_ALIGN_OUT_BOTTOM_LEFT, 20, 25);
   lv_obj_add_style(label_hr, &style_hr, LV_STATE_DEFAULT);
 
   // HR Title label
@@ -488,8 +485,8 @@ void HealthyPi_Display::draw_scr_charts_single(void) {
 
   // SPO2 Number label
   label_spo2 = lv_label_create(scr_charts_all);
-  lv_label_set_text(label_spo2, "--");
-  lv_obj_align_to(label_spo2, label_hr, LV_ALIGN_OUT_RIGHT_TOP, 50, 0);
+  lv_label_set_text(label_spo2, "96");
+  lv_obj_align_to(label_spo2, label_hr, LV_ALIGN_OUT_RIGHT_TOP, 60, 0);
   lv_obj_add_style(label_spo2, &style_spo2, LV_STATE_DEFAULT);
 
   // SpO2 Title label
@@ -506,8 +503,8 @@ void HealthyPi_Display::draw_scr_charts_single(void) {
 
   // RR Number label
   label_rr = lv_label_create(scr_charts_all);
-  lv_label_set_text(label_rr, "--");
-  lv_obj_align_to(label_rr, label_spo2, LV_ALIGN_OUT_RIGHT_TOP, 50, 0);
+  lv_label_set_text(label_rr, "20");
+  lv_obj_align_to(label_rr, label_spo2, LV_ALIGN_OUT_RIGHT_TOP, 60, 0);
   lv_obj_add_style(label_rr, &style_rr, LV_STATE_DEFAULT);
 
   // RR Title label
@@ -524,8 +521,8 @@ void HealthyPi_Display::draw_scr_charts_single(void) {
 
   // Temp Number label
   label_temp = lv_label_create(scr_charts_all);
-  lv_label_set_text(label_temp, "--");
-  lv_obj_align_to(label_temp, label_rr, LV_ALIGN_OUT_RIGHT_TOP, 75, 0);
+  lv_label_set_text(label_temp, "97.2");
+  lv_obj_align_to(label_temp, label_rr, LV_ALIGN_OUT_RIGHT_TOP, 60, 0);
   lv_obj_add_style(label_temp, &style_temp, LV_STATE_DEFAULT);
 
   // Temp label
@@ -536,7 +533,7 @@ void HealthyPi_Display::draw_scr_charts_single(void) {
 
   // Temp Sub deg C label
   static lv_obj_t *label_temp_sub = lv_label_create(scr_charts_all);
-  lv_label_set_text(label_temp_sub, "°C");
+  lv_label_set_text(label_temp_sub, "°F");
   lv_obj_align_to(label_temp_sub, label_temp, LV_ALIGN_BOTTOM_MID, 0, 10);
   lv_obj_add_style(label_temp_sub, &style_sub, LV_STATE_DEFAULT);
 
@@ -673,7 +670,7 @@ void HealthyPi_Display::draw_scr_charts_all(void) {
   // Temp Number label
   label_temp = lv_label_create(scr_charts_all);
   lv_label_set_text(label_temp, "--");
-  lv_obj_align_to(label_temp, label_rr, LV_ALIGN_OUT_RIGHT_TOP, 75, 0);
+  lv_obj_align_to(label_temp, NULL, LV_ALIGN_OUT_BOTTOM_RIGHT, -25, 25);
   lv_obj_add_style(label_temp, &style_temp, LV_STATE_DEFAULT);
 
   // Temp label
