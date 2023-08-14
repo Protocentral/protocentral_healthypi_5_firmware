@@ -39,7 +39,7 @@ lv_obj_t *scr_chart_ecg;
 lv_obj_t *scr_chart_single_ecg;
 
 lv_obj_t *scr_charts_ecg;
-lv_obj_t *scr_charts_ppg;
+lv_obj_t *scr_chart_ppg;
 lv_obj_t *scr_charts_resp;
 
 static lv_style_t style_sub;
@@ -105,13 +105,15 @@ void HealthyPi_Display::init() {
   init_styles();
 
   // draw_main_menu();
+  
   draw_scr_chart_ecg();
+  draw_scr_chart_ppg();
   //draw_scr_charts_ppg_only();
   // draw_scr_charts_ecg_only();
   //    lv_scr_load(scr_all_charts);
   //    lv_scr_load(scr_main_menu);
-  get_screen(SCR_CHART_ECG);
-  //  get_screen(SCR_CHARTS_PPG);
+  get_screen(SCR_CHART_PPG);
+  //get_screen(SCR_CHART_ECG);
 
   //get_screen(SCR_CHARTS_PPG);
 }
@@ -337,13 +339,13 @@ void draw_footer(lv_obj_t *parent) {
   lv_obj_add_style(label_temp, &style_temp, LV_STATE_DEFAULT);
 
   // Temp label
-  lv_obj_t *label_temp_title = lv_label_create(scr_chart_ecg);
+  lv_obj_t *label_temp_title = lv_label_create(parent);
   lv_label_set_text(label_temp_title, "Temperature");
   lv_obj_align_to(label_temp_title, label_temp, LV_ALIGN_TOP_MID, 0, -15);
   lv_obj_add_style(label_temp_title, &style_sub, LV_STATE_DEFAULT);
 
   // Temp Sub deg C label
-  static lv_obj_t *label_temp_sub = lv_label_create(scr_chart_ecg);
+  static lv_obj_t *label_temp_sub = lv_label_create(parent);
   lv_label_set_text(label_temp_sub, "°F");
   lv_obj_align_to(label_temp_sub, label_temp, LV_ALIGN_BOTTOM_MID, 0, 10);
   lv_obj_add_style(label_temp_sub, &style_sub, LV_STATE_DEFAULT);
@@ -353,7 +355,7 @@ void draw_footer(lv_obj_t *parent) {
   lv_label_set_text(label_symbols, LV_SYMBOL_BATTERY_FULL " " LV_SYMBOL_BLUETOOTH);
   lv_obj_align(label_symbols, LV_ALIGN_BOTTOM_RIGHT, -15, 0);
 
-  lv_obj_t *label_menu = lv_label_create(scr_chart_ecg);
+  lv_obj_t *label_menu = lv_label_create(parent);
   lv_label_set_text(label_menu, "Press side wheel UP/DOWN for more charts");
   lv_obj_align(label_menu, LV_ALIGN_BOTTOM_MID, 0, 0);
 }
@@ -379,11 +381,11 @@ void get_screen(enum hpi_scr_t get_scr) {
       lv_scr_load(scr_chart_ecg);
       break;
     case SCR_CHART_PPG:
-      chart1_update = false;
-      chart2_update = true;
+      chart1_update = true;
+      chart2_update = false;
       chart3_update = false;
       hpi_current_screen = SCR_CHART_PPG;
-      lv_scr_load(scr_charts_ppg);
+      lv_scr_load(scr_chart_ppg);
 
       break;
     default:
@@ -496,7 +498,7 @@ void HealthyPi_Display::add_samples(int num_samples) {
   gx += num_samples;
 }
 
-// Draw single chart screen
+// Draw single ECG chart
 void HealthyPi_Display::draw_scr_chart_ecg(void) {
   scr_chart_ecg = lv_obj_create(NULL);
   draw_footer(scr_chart_ecg);
@@ -522,6 +524,39 @@ void HealthyPi_Display::draw_scr_chart_ecg(void) {
 
   static lv_obj_t *label_chart_title = lv_label_create(scr_chart_ecg);
   lv_label_set_text(label_chart_title, "Showing ECG");
+  lv_obj_align_to(label_chart_title, chart1, LV_ALIGN_OUT_TOP_MID, 0, 20);
+  //lv_obj_add_style(label_rr_sub, &style_sub, LV_STATE_DEFAULT);
+
+  /* Data Series for main plot*/
+  ser1 = lv_chart_add_series(chart1, lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_PRIMARY_Y);
+}
+
+// Draw single PPG chart
+void HealthyPi_Display::draw_scr_chart_ppg(void) {
+  scr_chart_ppg = lv_obj_create(NULL);
+  draw_footer(scr_chart_ppg);
+
+  lv_obj_add_style(scr_chart_ppg, &style_scr_back, 0);
+
+  lv_group_t *g1 = lv_group_create();
+
+  // Create Chart 1
+  chart1 = lv_chart_create(scr_chart_ppg);
+  lv_obj_set_size(chart1, 460, 200);
+  lv_obj_set_style_bg_color(chart1, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
+
+  lv_obj_set_style_size(chart1, 0, LV_PART_INDICATOR);
+  lv_chart_set_point_count(chart1, DISP_WINDOW_SIZE);
+  // lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);   /*Show lines and points too*
+  //lv_chart_set_range(chart1, LV_CHART_AXIS_PRIMARY_Y, -200, 200);
+  // lv_chart_set_range(chart1, LV_CHART_AXIS_SECONDARY_Y, 0, 1000);
+  lv_chart_set_div_line_count(chart1, 0, 0);
+  lv_chart_set_update_mode(chart1, LV_CHART_UPDATE_MODE_CIRCULAR);
+
+  lv_obj_set_pos(chart1, 10, 4);
+
+  static lv_obj_t *label_chart_title = lv_label_create(scr_chart_ppg);
+  lv_label_set_text(label_chart_title, "Showing PPG");
   lv_obj_align_to(label_chart_title, chart1, LV_ALIGN_OUT_TOP_MID, 0, 20);
   //lv_obj_add_style(label_rr_sub, &style_sub, LV_STATE_DEFAULT);
 
@@ -677,153 +712,7 @@ void HealthyPi_Display::draw_scr_charts_all(void) {
   // lv_indev_set_group(indev_keypad, g1);
 }
 
-// Draw all charts screen
-void HealthyPi_Display::draw_scr_charts_ppg_only(void) {
-  scr_charts_ppg = lv_obj_create(NULL);
-  draw_footer(scr_charts_ppg);
 
-  lv_obj_add_style(scr_charts_ppg, &style_scr_back, 0);
-
-  lv_group_t *g1 = lv_group_create();
-
-  // Create Chart 1
-  chart1 = lv_chart_create(scr_charts_ppg);
-  lv_obj_set_size(chart1, 380, 90);
-  lv_obj_set_style_bg_color(chart1, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
-
-  lv_obj_set_style_size(chart1, 0, LV_PART_INDICATOR);
-  lv_chart_set_point_count(chart1, DISP_WINDOW_SIZE);
-  // lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);   /*Show lines and points too*
-  lv_chart_set_range(chart1, LV_CHART_AXIS_PRIMARY_Y, -100, 100);
-  // lv_chart_set_range(chart1, LV_CHART_AXIS_SECONDARY_Y, 0, 1000);
-  lv_chart_set_div_line_count(chart1, 0, 0);
-  lv_chart_set_update_mode(chart1, LV_CHART_UPDATE_MODE_CIRCULAR);
-
-  lv_obj_set_pos(chart1, 10, 4);
-
-  // Create Chart 2
-  chart2 = lv_chart_create(scr_charts_ppg);
-  lv_obj_set_size(chart2, 380, 90);
-  lv_obj_set_style_bg_color(chart2, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
-
-  lv_obj_set_style_size(chart2, 0, LV_PART_INDICATOR);
-  lv_chart_set_point_count(chart2, DISP_WINDOW_SIZE);
-  // lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);   /*Show lines and points too*
-  lv_chart_set_range(chart2, LV_CHART_AXIS_PRIMARY_Y, -1000, 1000);
-  // lv_chart_set_range(chart1, LV_CHART_AXIS_SECONDARY_Y, 0, 1000);
-  lv_chart_set_div_line_count(chart2, 0, 0);
-  lv_chart_set_update_mode(chart2, LV_CHART_UPDATE_MODE_CIRCULAR);
-
-  lv_obj_align_to(chart2, chart1, LV_ALIGN_OUT_BOTTOM_MID, 0, 2);
-
-  // Create Chart 3
-  chart3 = lv_chart_create(scr_charts_ppg);
-  lv_obj_set_size(chart3, 380, 90);
-  lv_obj_set_style_bg_color(chart3, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
-
-  lv_obj_set_style_size(chart3, 0, LV_PART_INDICATOR);
-  lv_chart_set_point_count(chart3, DISP_WINDOW_SIZE);
-  // lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);   /*Show lines and points too*
-  lv_chart_set_range(chart3, LV_CHART_AXIS_PRIMARY_Y, 0, 1000);
-  // lv_chart_set_range(chart1, LV_CHART_AXIS_SECONDARY_Y, 0, 1000);
-  lv_chart_set_div_line_count(chart3, 0, 0);
-  lv_chart_set_update_mode(chart3, LV_CHART_UPDATE_MODE_CIRCULAR);
-
-  lv_obj_align_to(chart3, chart2, LV_ALIGN_OUT_BOTTOM_MID, 0, 2);
-
-  /* Data Series for 3 plots*/
-  ser1 = lv_chart_add_series(chart1, lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_PRIMARY_Y);
-  ser2 = lv_chart_add_series(chart2, lv_palette_main(LV_PALETTE_YELLOW), LV_CHART_AXIS_PRIMARY_Y);
-  ser3 = lv_chart_add_series(chart3, lv_palette_main(LV_PALETTE_BLUE), LV_CHART_AXIS_PRIMARY_Y);
-
-  /*
-    // Button to switch to other screens
-    lv_obj_t *btn1 = lv_btn_create(scr_charts_all);
-    lv_obj_add_event_cb(btn1, btn1_cb, LV_EVENT_ALL, NULL);
-    lv_obj_align_to(btn1, chart3, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
-
-    lv_obj_t *label = lv_label_create(btn1);
-    lv_label_set_text(label, "Push button for other charts");
-    lv_obj_center(label);
-    */
-
-  // HR Number label
-  label_hr = lv_label_create(scr_charts_ppg);
-  lv_label_set_text(label_hr, "--");
-  lv_obj_align_to(label_hr, chart1, LV_ALIGN_OUT_RIGHT_MID, 8, -25);
-  lv_obj_add_style(label_hr, &style_hr, LV_STATE_DEFAULT);
-
-  // HR Title label
-  static lv_obj_t *label_hr_title = lv_label_create(scr_charts_ppg);
-  lv_label_set_text(label_hr_title, "HR");
-  lv_obj_align_to(label_hr_title, label_hr, LV_ALIGN_TOP_MID, 0, -10);
-  lv_obj_add_style(label_hr_title, &style_sub, LV_STATE_DEFAULT);
-
-  // HR BPM Subscript label
-  static lv_obj_t *label_hr_sub = lv_label_create(scr_charts_ppg);
-  lv_label_set_text(label_hr_sub, "bpm");
-  lv_obj_align_to(label_hr_sub, label_hr, LV_ALIGN_BOTTOM_MID, 0, 10);
-  lv_obj_add_style(label_hr_sub, &style_sub, LV_STATE_DEFAULT);
-
-  // SPO2 Number label
-  label_spo2 = lv_label_create(scr_charts_ppg);
-  lv_label_set_text(label_spo2, "--");
-  lv_obj_align_to(label_spo2, chart2, LV_ALIGN_OUT_RIGHT_MID, 8, -25);
-  lv_obj_add_style(label_spo2, &style_spo2, LV_STATE_DEFAULT);
-
-  // SpO2 Title label
-  static lv_obj_t *label_spo2_title = lv_label_create(scr_charts_ppg);
-  lv_label_set_text(label_spo2_title, "SpO2");
-  lv_obj_align_to(label_spo2_title, label_spo2, LV_ALIGN_TOP_MID, 0, -10);
-  lv_obj_add_style(label_spo2_title, &style_sub, LV_STATE_DEFAULT);
-
-  // SpO2 % label
-  static lv_obj_t *label_spo2_sub = lv_label_create(scr_charts_ppg);
-  lv_label_set_text(label_spo2_sub, "%");
-  lv_obj_align_to(label_spo2_sub, label_spo2, LV_ALIGN_BOTTOM_MID, 0, 10);
-  lv_obj_add_style(label_spo2_sub, &style_sub, LV_STATE_DEFAULT);
-
-  // RR Number label
-  label_rr = lv_label_create(scr_charts_ppg);
-  lv_label_set_text(label_rr, "--");
-  lv_obj_align_to(label_rr, chart3, LV_ALIGN_OUT_RIGHT_MID, 8, -30);
-  lv_obj_add_style(label_rr, &style_rr, LV_STATE_DEFAULT);
-
-  // RR Sub BPM label
-  static lv_obj_t *label_rr_title = lv_label_create(scr_charts_ppg);
-  lv_label_set_text(label_rr_title, "Resp Rate");
-  lv_obj_align_to(label_rr_title, label_rr, LV_ALIGN_TOP_MID, 0, -10);
-  lv_obj_add_style(label_rr_title, &style_sub, LV_STATE_DEFAULT);
-
-  // RR Sub BPM label
-  static lv_obj_t *label_rr_sub = lv_label_create(scr_charts_ppg);
-  lv_label_set_text(label_rr_sub, "bpm");
-  lv_obj_align_to(label_rr_sub, label_rr, LV_ALIGN_BOTTOM_MID, 0, 10);
-  lv_obj_add_style(label_rr_sub, &style_sub, LV_STATE_DEFAULT);
-
-  // Temp label
-  lv_obj_t *label_temp_title = lv_label_create(scr_charts_ppg);
-  lv_label_set_text(label_temp_title, "Temp.");
-  lv_obj_align_to(label_temp_title, label_rr_sub, LV_ALIGN_BOTTOM_MID, 5, 25);
-  lv_obj_add_style(label_temp_title, &style_sub, LV_STATE_DEFAULT);
-
-  // Temp Number label
-  label_temp = lv_label_create(scr_charts_ppg);
-  lv_label_set_text(label_temp, "--");
-  lv_obj_align_to(label_temp, label_temp_title, LV_ALIGN_BOTTOM_MID, -20, 10);
-  lv_obj_add_style(label_temp, &style_temp, LV_STATE_DEFAULT);
-
-  // Temp Sub deg C label
-  static lv_obj_t *label_temp_sub = lv_label_create(scr_charts_ppg);
-  lv_label_set_text(label_temp_sub, "°C");
-  lv_obj_align_to(label_temp_sub, label_temp, LV_ALIGN_BOTTOM_MID, 0, 10);
-  lv_obj_add_style(label_temp_sub, &style_sub, LV_STATE_DEFAULT);
-
-  // draw_header(scr_charts_all);
-
-  // lv_group_add_obj(g1, btn1);
-  // lv_indev_set_group(indev_keypad, g1);
-}
 
 // Draw the main menu
 void HealthyPi_Display::draw_main_menu(void) {
