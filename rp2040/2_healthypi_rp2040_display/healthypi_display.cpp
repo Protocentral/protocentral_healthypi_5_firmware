@@ -36,10 +36,18 @@ lv_obj_t *label_co2_voc;
 // LVGL GUI Screens
 lv_obj_t *scr_main_menu;
 lv_obj_t *scr_charts_all;
+lv_obj_t *scr_chart_single_ecg;
 
 lv_obj_t *scr_charts_ecg;
 lv_obj_t *scr_charts_ppg;
 lv_obj_t *scr_charts_resp;
+
+static lv_style_t style_sub;
+static lv_style_t style_hr;
+static lv_style_t style_spo2;
+static lv_style_t style_rr;
+static lv_style_t style_temp;
+static lv_style_t style_scr_back;
 
 enum hpi_scr_t hpi_current_screen = SCR_MAIN_MENU;
 
@@ -268,14 +276,77 @@ void draw_footer(lv_obj_t *parent) {
   lv_style_set_pad_all(&style, 0);
   lv_obj_add_style(parent, &style, 0);
 
-  // Draw Header bar
-  // ProtoCentral logo
-  /*LV_IMG_DECLARE(logo_oneline);
-  lv_obj_t *img1 = lv_img_create(parent);
-  lv_img_set_src(img1, &logo_oneline);
-  lv_obj_align(img1, LV_ALIGN_BOTTOM_MID, 10, -10);
-  lv_obj_set_size(img1, 104, 10);
-  */
+  // HR Number label
+  label_hr = lv_label_create(parent);
+  lv_label_set_text(label_hr, "83");
+  lv_obj_align(label_hr, LV_ALIGN_LEFT_MID, 20, 100);
+  lv_obj_add_style(label_hr, &style_hr, LV_STATE_DEFAULT);
+
+  // HR Title label
+  static lv_obj_t *label_hr_title = lv_label_create(parent);
+  lv_label_set_text(label_hr_title, "HR");
+  lv_obj_align_to(label_hr_title, label_hr, LV_ALIGN_TOP_MID, 0, -15);
+  lv_obj_add_style(label_hr_title, &style_sub, LV_STATE_DEFAULT);
+
+  // HR BPM Subscript label
+  static lv_obj_t *label_hr_sub = lv_label_create(parent);
+  lv_label_set_text(label_hr_sub, "bpm");
+  lv_obj_align_to(label_hr_sub, label_hr, LV_ALIGN_BOTTOM_MID, 0, 10);
+  lv_obj_add_style(label_hr_sub, &style_sub, LV_STATE_DEFAULT);
+
+  // SPO2 Number label
+  label_spo2 = lv_label_create(parent);
+  lv_label_set_text(label_spo2, "96");
+  lv_obj_align_to(label_spo2, label_hr, LV_ALIGN_OUT_RIGHT_TOP, 60, 0);
+  lv_obj_add_style(label_spo2, &style_spo2, LV_STATE_DEFAULT);
+
+  // SpO2 Title label
+  static lv_obj_t *label_spo2_title = lv_label_create(parent);
+  lv_label_set_text(label_spo2_title, "SpO2");
+  lv_obj_align_to(label_spo2_title, label_spo2, LV_ALIGN_TOP_MID, 0, -15);
+  lv_obj_add_style(label_spo2_title, &style_sub, LV_STATE_DEFAULT);
+
+  // SpO2 % label
+  static lv_obj_t *label_spo2_sub = lv_label_create(parent);
+  lv_label_set_text(label_spo2_sub, "%");
+  lv_obj_align_to(label_spo2_sub, label_spo2, LV_ALIGN_BOTTOM_MID, 0, 10);
+  lv_obj_add_style(label_spo2_sub, &style_sub, LV_STATE_DEFAULT);
+
+  // RR Number label
+  label_rr = lv_label_create(parent);
+  lv_label_set_text(label_rr, "20");
+  lv_obj_align_to(label_rr, label_spo2, LV_ALIGN_OUT_RIGHT_TOP, 60, 0);
+  lv_obj_add_style(label_rr, &style_rr, LV_STATE_DEFAULT);
+
+  // RR Title label
+  static lv_obj_t *label_rr_title = lv_label_create(parent);
+  lv_label_set_text(label_rr_title, "Resp Rate");
+  lv_obj_align_to(label_rr_title, label_rr, LV_ALIGN_TOP_MID, 0, -15);
+  lv_obj_add_style(label_rr_title, &style_sub, LV_STATE_DEFAULT);
+
+  // RR Sub BPM label
+  static lv_obj_t *label_rr_sub = lv_label_create(parent);
+  lv_label_set_text(label_rr_sub, "bpm");
+  lv_obj_align_to(label_rr_sub, label_rr, LV_ALIGN_BOTTOM_MID, 0, 10);
+  lv_obj_add_style(label_rr_sub, &style_sub, LV_STATE_DEFAULT);
+
+  // Temp Number label
+  label_temp = lv_label_create(parent);
+  lv_label_set_text(label_temp, "97.2");
+  lv_obj_align_to(label_temp, label_rr, LV_ALIGN_OUT_RIGHT_TOP, 60, 0);
+  lv_obj_add_style(label_temp, &style_temp, LV_STATE_DEFAULT);
+
+  // Temp label
+  lv_obj_t *label_temp_title = lv_label_create(scr_charts_all);
+  lv_label_set_text(label_temp_title, "Temperature");
+  lv_obj_align_to(label_temp_title, label_temp, LV_ALIGN_TOP_MID, 0, -15);
+  lv_obj_add_style(label_temp_title, &style_sub, LV_STATE_DEFAULT);
+
+  // Temp Sub deg C label
+  static lv_obj_t *label_temp_sub = lv_label_create(scr_charts_all);
+  lv_label_set_text(label_temp_sub, "°F");
+  lv_obj_align_to(label_temp_sub, label_temp, LV_ALIGN_BOTTOM_MID, 0, 10);
+  lv_obj_add_style(label_temp_sub, &style_sub, LV_STATE_DEFAULT);
 
   // Label for Symbols
   lv_obj_t *label_symbols = lv_label_create(parent);
@@ -373,13 +444,6 @@ static void btn1_cb(lv_event_t *e) {
   }
 }
 
-static lv_style_t style_sub;
-static lv_style_t style_hr;
-static lv_style_t style_spo2;
-static lv_style_t style_rr;
-static lv_style_t style_temp;
-static lv_style_t style_scr_back;
-
 /* LVGL Screens */
 void HealthyPi_Display::init_styles() {
   // Subscript (Unit) label style
@@ -462,80 +526,8 @@ void HealthyPi_Display::draw_scr_charts_single(void) {
   lv_obj_align_to(label_chart_title, chart1, LV_ALIGN_OUT_TOP_MID, 0, 20);
   //lv_obj_add_style(label_rr_sub, &style_sub, LV_STATE_DEFAULT);
 
-  /* Data Series for 3 plots*/
+  /* Data Series for main plot*/
   ser1 = lv_chart_add_series(chart1, lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_PRIMARY_Y);
-
-  // HR Number label
-  label_hr = lv_label_create(scr_charts_all);
-  lv_label_set_text(label_hr, "83");
-  lv_obj_align_to(label_hr, chart1, LV_ALIGN_OUT_BOTTOM_LEFT, 20, 25);
-  lv_obj_add_style(label_hr, &style_hr, LV_STATE_DEFAULT);
-
-  // HR Title label
-  static lv_obj_t *label_hr_title = lv_label_create(scr_charts_all);
-  lv_label_set_text(label_hr_title, "HR");
-  lv_obj_align_to(label_hr_title, label_hr, LV_ALIGN_TOP_MID, 0, -15);
-  lv_obj_add_style(label_hr_title, &style_sub, LV_STATE_DEFAULT);
-
-  // HR BPM Subscript label
-  static lv_obj_t *label_hr_sub = lv_label_create(scr_charts_all);
-  lv_label_set_text(label_hr_sub, "bpm");
-  lv_obj_align_to(label_hr_sub, label_hr, LV_ALIGN_BOTTOM_MID, 0, 10);
-  lv_obj_add_style(label_hr_sub, &style_sub, LV_STATE_DEFAULT);
-
-  // SPO2 Number label
-  label_spo2 = lv_label_create(scr_charts_all);
-  lv_label_set_text(label_spo2, "96");
-  lv_obj_align_to(label_spo2, label_hr, LV_ALIGN_OUT_RIGHT_TOP, 60, 0);
-  lv_obj_add_style(label_spo2, &style_spo2, LV_STATE_DEFAULT);
-
-  // SpO2 Title label
-  static lv_obj_t *label_spo2_title = lv_label_create(scr_charts_all);
-  lv_label_set_text(label_spo2_title, "SpO2");
-  lv_obj_align_to(label_spo2_title, label_spo2, LV_ALIGN_TOP_MID, 0, -15);
-  lv_obj_add_style(label_spo2_title, &style_sub, LV_STATE_DEFAULT);
-
-  // SpO2 % label
-  static lv_obj_t *label_spo2_sub = lv_label_create(scr_charts_all);
-  lv_label_set_text(label_spo2_sub, "%");
-  lv_obj_align_to(label_spo2_sub, label_spo2, LV_ALIGN_BOTTOM_MID, 0, 10);
-  lv_obj_add_style(label_spo2_sub, &style_sub, LV_STATE_DEFAULT);
-
-  // RR Number label
-  label_rr = lv_label_create(scr_charts_all);
-  lv_label_set_text(label_rr, "20");
-  lv_obj_align_to(label_rr, label_spo2, LV_ALIGN_OUT_RIGHT_TOP, 60, 0);
-  lv_obj_add_style(label_rr, &style_rr, LV_STATE_DEFAULT);
-
-  // RR Title label
-  static lv_obj_t *label_rr_title = lv_label_create(scr_charts_all);
-  lv_label_set_text(label_rr_title, "Resp Rate");
-  lv_obj_align_to(label_rr_title, label_rr, LV_ALIGN_TOP_MID, 0, -15);
-  lv_obj_add_style(label_rr_title, &style_sub, LV_STATE_DEFAULT);
-
-  // RR Sub BPM label
-  static lv_obj_t *label_rr_sub = lv_label_create(scr_charts_all);
-  lv_label_set_text(label_rr_sub, "bpm");
-  lv_obj_align_to(label_rr_sub, label_rr, LV_ALIGN_BOTTOM_MID, 0, 10);
-  lv_obj_add_style(label_rr_sub, &style_sub, LV_STATE_DEFAULT);
-
-  // Temp Number label
-  label_temp = lv_label_create(scr_charts_all);
-  lv_label_set_text(label_temp, "97.2");
-  lv_obj_align_to(label_temp, label_rr, LV_ALIGN_OUT_RIGHT_TOP, 60, 0);
-  lv_obj_add_style(label_temp, &style_temp, LV_STATE_DEFAULT);
-
-  // Temp label
-  lv_obj_t *label_temp_title = lv_label_create(scr_charts_all);
-  lv_label_set_text(label_temp_title, "Temperature");
-  lv_obj_align_to(label_temp_title, label_temp, LV_ALIGN_TOP_MID, 0, -15);
-  lv_obj_add_style(label_temp_title, &style_sub, LV_STATE_DEFAULT);
-
-  // Temp Sub deg C label
-  static lv_obj_t *label_temp_sub = lv_label_create(scr_charts_all);
-  lv_label_set_text(label_temp_sub, "°F");
-  lv_obj_align_to(label_temp_sub, label_temp, LV_ALIGN_BOTTOM_MID, 0, 10);
-  lv_obj_add_style(label_temp_sub, &style_sub, LV_STATE_DEFAULT);
 
   // draw_header(scr_charts_all);
 

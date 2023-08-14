@@ -143,7 +143,7 @@ void setup() {
 
   // Set Initial LED states
   digitalWrite(HPI_LED_BLUE, HIGH);
-  digitalWrite(HPI_LED_GREEN, LOW);
+  digitalWrite(HPI_LED_GREEN, HIGH);
 
   // Configure SPI pins for AFE44XX & MAX30001
   SPI.setRX(SPI_MISO_PIN);
@@ -305,11 +305,11 @@ void loop() {
     BioZSkipSample = false;
   }*/
 
-  if (currentTime - prevTempCountTime >= TEMP_READ_INTERVAL) {
+  /*if (currentTime - prevTempCountTime >= TEMP_READ_INTERVAL) {
     float tread = getTemperature();
     hpi_display.updateTemp(tread);
     prevTempCountTime = currentTime;
-  }
+  }*/
 
   send_data_serial_port();
 
