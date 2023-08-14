@@ -69,9 +69,9 @@ enum hpi_scr_t
 {
   SCR_MAIN_MENU,
   SCR_CHARTS_ALL,
-  SCR_CHARTS_ECG,
-  SCR_CHARTS_PPG,
-  SCR_CHARTS_RESP
+  SCR_CHART_ECG,
+  SCR_CHART_PPG,
+  SCR_CHART_RESP
 };
 
 #endif // __HPI_DEFS_H__
