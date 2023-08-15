@@ -52,8 +52,8 @@ char DataPacket[30];
 #define SPI_MISO_PIN 4
 
 #define MAX30001_CS_PIN 5
-#define AFE44XX_CS_PIN 27
 
+#define AFE44XX_CS_PIN 27
 #define AFE44XX_DRDY_PIN 17
 #define AFE44XX_PWDN_PIN 18
 

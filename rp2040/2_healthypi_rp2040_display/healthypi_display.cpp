@@ -59,49 +59,111 @@ bool chart1_update = false;
 bool chart2_update = false;
 bool chart3_update = false;
 
+static lv_indev_drv_t indev_drv;
+
+/*Get the currently being pressed key.  0 if no key is pressed*/
+static uint32_t keypad_get_key(void) {
+  /*Your code comes here*/
+  if (digitalRead(BUTTON_DOWN) == LOW) {
+    // Serial.println("Down");
+    return (uint32_t)1;
+  } else if (digitalRead(BUTTON_UP) == LOW) {
+    return (uint32_t)2;
+  } else if (digitalRead(BUTTON_CENTER) == LOW) {
+    return (uint32_t)3;
+  }
+  return 0;
+}
+
+#if LV_USE_LOG != 0
+/* Serial debugging */
+void my_print(const char *buf) {
+  Serial.printf(buf);
+  Serial.flush();
+}
+#endif
+
+/*Will be called by the library to read*/
+static void keypad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
+  static uint32_t last_key = 0;
+
+  /*Get whether the a key is pressed and save the pressed key*/
+  uint32_t act_key = keypad_get_key();
+  if (act_key != 0) {
+    data->state = LV_INDEV_STATE_PR;
+
+    /*Translate the keys to LVGL control characters according to your key definitions*/
+    switch (act_key) {
+      case 1:
+        act_key = LV_KEY_DOWN;
+        break;
+      case 2:
+        act_key = LV_KEY_UP;
+        break;
+      case 3:
+        act_key = LV_KEY_ENTER;
+        break;
+      case 4:
+        act_key = LV_KEY_ENTER;
+        break;
+    }
+
+    last_key = act_key;
+  } else {
+    data->state = LV_INDEV_STATE_REL;
+  }
+
+  data->key = last_key;
+}
+
 void HealthyPi_Display::init() {
   Serial.println("Initializing display");
 
+  // Init TFT library
   tft.begin();
+  tft.setRotation(3);
 
+  // Setup LVGL
   lv_init();
 
 #if LV_USE_LOG != 0
   lv_log_register_print_cb(my_print); /* register print function for debugging */
 #endif
 
-  tft.setRotation(3);
-
   lv_disp_draw_buf_init(&draw_buf, buf, NULL, screenWidth * 10);
 
-  /*Initialize the display*/
+  // Setup display device for LVGL
   static lv_disp_drv_t disp_drv;
   lv_disp_drv_init(&disp_drv);
-  /*Change the following line to your display resolution*/
   disp_drv.hor_res = screenWidth;
   disp_drv.ver_res = screenHeight;
   disp_drv.flush_cb = my_disp_flush;
   disp_drv.draw_buf = &draw_buf;
   lv_disp_drv_register(&disp_drv);
 
-  // lv_obj_set_style_bg_color(lv_scr_act(), LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
-  //  lv_obj_set_style_text_color(lv_scr_act(),LV_COLOR_MAKE(255, 255, 255), LV_STATE_DEFAULT);
-  lv_indev_init();
+  // Initialize input device (nav wheel)
+  pinMode(BUTTON_DOWN, INPUT);
+  pinMode(BUTTON_UP, INPUT);
+  pinMode(BUTTON_CENTER, INPUT);
+
+  // Register as a keypad input device
+  lv_indev_drv_init(&indev_drv);
+  indev_drv.type = LV_INDEV_TYPE_KEYPAD;
+  indev_drv.read_cb = keypad_read;
+  indev_keypad = lv_indev_drv_register(&indev_drv);
 
   init_styles();
 
-  // draw_main_menu();
-  
-  //draw_scr_chart_ecg();
+  draw_scr_chart_ecg();
   //draw_scr_chart_ppg();
-  draw_scr_chart_resp();
+  //draw_scr_chart_resp();
   //draw_scr_charts_ppg_only();
   // draw_scr_charts_ecg_only();
   //    lv_scr_load(scr_all_charts);
   //    lv_scr_load(scr_main_menu);
   //get_screen(SCR_CHART_PPG);
-  //get_screen(SCR_CHART_ECG);
-  get_screen(SCR_CHART_RESP);
+  get_screen(SCR_CHART_ECG);
+  //get_screen(SCR_CHART_RESP);
 
   //get_screen(SCR_CHARTS_PPG);
 }
@@ -201,25 +263,25 @@ void HealthyPi_Display::draw_plotresp(float *data_resp, int num_samples) {
 }
 
 void HealthyPi_Display::updateHR(uint8_t hr) {
-  if (chart1_update == true) {
+  //if (chart1_update == true) {
     lv_label_set_text_fmt(label_hr, "%d", hr);
-  }
+  //}
 }
 
 void HealthyPi_Display::updateSpO2(uint8_t spo2, bool spo2_ok) {
-  if (chart2_update == true) {
+  //if (chart2_update == true) {
     if (spo2_ok == true) {
       lv_label_set_text_fmt(label_spo2, "%d", spo2);
     } else {
       lv_label_set_text_fmt(label_spo2, "--");
     }
-  }
+  //}
 }
 
 void HealthyPi_Display::updateRR(uint8_t rr) {
-  if (chart3_update == true) {
+  //if (chart3_update == true) {
     lv_label_set_text_fmt(label_rr, "%d\n", rr);
-  }
+  //}
 }
 
 void HealthyPi_Display::updateTemp(float temp) {
@@ -508,7 +570,7 @@ void HealthyPi_Display::draw_scr_chart_ecg(void) {
   lv_obj_set_style_size(chart1, 0, LV_PART_INDICATOR);
   lv_chart_set_point_count(chart1, DISP_WINDOW_SIZE);
   // lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);   /*Show lines and points too*
-  //lv_chart_set_range(chart1, LV_CHART_AXIS_PRIMARY_Y, -200, 200);
+  lv_chart_set_range(chart1, LV_CHART_AXIS_PRIMARY_Y, -1000, 1000);
   // lv_chart_set_range(chart1, LV_CHART_AXIS_SECONDARY_Y, 0, 1000);
   lv_chart_set_div_line_count(chart1, 0, 0);
   lv_chart_set_update_mode(chart1, LV_CHART_UPDATE_MODE_CIRCULAR);
@@ -791,73 +853,4 @@ void my_disp_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color
   tft.endWrite();
 
   lv_disp_flush_ready(disp);
-}
-
-/*Get the currently being pressed key.  0 if no key is pressed*/
-static uint32_t keypad_get_key(void) {
-  /*Your code comes here*/
-  if (digitalRead(BUTTON_DOWN) == LOW) {
-    // Serial.println("Down");
-    return (uint32_t)1;
-  } else if (digitalRead(BUTTON_UP) == LOW) {
-    return (uint32_t)2;
-  } else if (digitalRead(BUTTON_CENTER) == LOW) {
-    return (uint32_t)3;
-  }
-  return 0;
-}
-
-#if LV_USE_LOG != 0
-/* Serial debugging */
-void my_print(const char *buf) {
-  Serial.printf(buf);
-  Serial.flush();
-}
-#endif
-
-/*Will be called by the library to read*/
-static void keypad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
-  static uint32_t last_key = 0;
-
-  /*Get whether the a key is pressed and save the pressed key*/
-  uint32_t act_key = keypad_get_key();
-  if (act_key != 0) {
-    data->state = LV_INDEV_STATE_PR;
-
-    /*Translate the keys to LVGL control characters according to your key definitions*/
-    switch (act_key) {
-      case 1:
-        act_key = LV_KEY_DOWN;
-        break;
-      case 2:
-        act_key = LV_KEY_UP;
-        break;
-      case 3:
-        act_key = LV_KEY_ENTER;
-        break;
-      case 4:
-        act_key = LV_KEY_ENTER;
-        break;
-    }
-
-    last_key = act_key;
-  } else {
-    data->state = LV_INDEV_STATE_REL;
-  }
-
-  data->key = last_key;
-}
-
-void lv_indev_init(void) {
-  static lv_indev_drv_t indev_drv;
-
-  pinMode(BUTTON_DOWN, INPUT);
-  pinMode(BUTTON_UP, INPUT);
-  pinMode(BUTTON_CENTER, INPUT);
-
-  /*Register a keypad input device*/
-  lv_indev_drv_init(&indev_drv);
-  indev_drv.type = LV_INDEV_TYPE_KEYPAD;
-  indev_drv.read_cb = keypad_read;
-  indev_keypad = lv_indev_drv_register(&indev_drv);
 }

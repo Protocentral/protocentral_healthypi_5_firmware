@@ -2,33 +2,33 @@
 #ifndef __HPI_DEFS_H__
 #define __HPI_DEFS_H__
 
-#define SPI_SCK_PIN 2
-#define SPI_MOSI_PIN 3
-#define SPI_MISO_PIN 4
-
-#define MAX30001_CS_PIN 5
-#define MAX30001_INTB_PIN 20
-#define MAX30001_INT2B_PIN 19
-
-#define AFE44XX_CS_PIN 27
-#define AFE44XX_DRDY_PIN 17
-#define AFE44XX_PWDN_PIN 18
-
 #define PIN_RP2040_TX_ESP32_RX 24
 #define PIN_RP2040_RX_ESP32_TX 25
 
 #define HPI_SW1 12
 #define HPI_SW2 14
-#define HPI_SW3 1
+#define HPI_SW3 15
 
 #define BUTTON_DOWN HPI_SW1
 #define BUTTON_UP HPI_SW3
 #define BUTTON_CENTER HPI_SW2
 
+#define SPI_SCK_PIN   2
+#define SPI_MOSI_PIN  3
+#define SPI_MISO_PIN  4
+
+#define MAX30001_CS_PIN 5
+#define MAX30001_INTB_PIN 20
+#define MAX30001_INT2B_PIN 19
+
+#define AFE44XX_CS_PIN   19
+#define AFE44XX_DRDY_PIN 17
+#define AFE44XX_PWDN_PIN 18
+
 #define HPI_LED_BLUE 22
 #define HPI_LED_GREEN 21
 
-#define SD_CS_PIN 16
+#define SD_CS_PIN 13
 
 #define TFT_BKL_LITE 16            // Backlight control pin
 #define SD_CS_DISPLAY TFT_BKL_LITE // Backlight PWM pin

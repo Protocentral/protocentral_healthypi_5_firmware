@@ -42,6 +42,8 @@ due to limitations with the LVGL library
 #include <protocentral_max30001.h>
 
 #include "images.h"
+
+// Contains pin definitions and global constants
 #include "hpi_defines.h"
 
 #include "healthypi_display.h"
@@ -152,6 +154,10 @@ void setup() {
 
   SPI.begin();
 
+  hpi_display.init();
+  delay(1000);
+  // SD.begin(SD_CS_PIN,40000000, SPI1);
+
   // Configure I2C pins for Temperature sensor/QWIIC ports
   Wire1.setSDA(6);
   Wire1.setSCL(7);
@@ -168,16 +174,12 @@ void setup() {
     Serial2.begin(RP2040_ESP32_UART_BAUD);
   }
 
-  delay(100);
+  delay(500);
   afe44xx.afe44xx_init();
-  delay(100);
-
+  delay(500);
   max30001.BeginECGBioZ();
-
-  hpi_display.init();
-  delay(1000);
-  // SD.begin(SD_CS_PIN,40000000, SPI1);
-
+  delay(500);
+  
   Serial.println("Init complete");
 }
 
@@ -206,13 +208,17 @@ void loop() {
   ppg_wave_ir = (int16_t)(afe44xx_raw_data.IR_data >> 8);
   ppg_wave_ir = ppg_wave_ir;
 
-  //signed long ppgVal1 = (afe44xx_raw_data.RED_data >> 8);
-
-  //redPlot = (float)(ppgVal1);  // = (float) map(ppgVal1, (float)1000, (float)2500.0, (float)0.0, (float)100.0);
-  // float redPlot1 = ppgVal1/100000;
+  signed long ppgVal1 = (afe44xx_raw_data.IR_data >> 8);
 
   ppg_data_buff[ppg_stream_cnt++] = (uint8_t)ppg_wave_ir;
   ppg_data_buff[ppg_stream_cnt++] = (ppg_wave_ir >> 8);
+
+  //redPlot = (float)(ppg_wave_ir/10000);  // = (float) map(ppgVal1, (float)1000, (float)2500.0, (float)0.0, (float)100.0);
+  float redPlot = (float)(ppg_wave_ir/10.000000);
+
+  hpi_display.draw_plotECG(redPlot);
+  hpi_display.add_samples(1);
+  hpi_display.do_set_scale();
 
   if (ppg_stream_cnt >= 19) {
     ppg_buf_ready = true;
@@ -249,11 +255,11 @@ void loop() {
       fltECGSamples[i] = (float)(max30001.s32ECGData[i] * ecg_mult);
       setData(max30001.s32ECGData[i], 0, false);
       // send_data_serial_port();
-      hpi_display.draw_plotECG(fltECGSamples[i]);
+      //hpi_display.draw_plotECG(fltECGSamples[i]);
     }
-    hpi_display.add_samples(max30001.ecgSamplesAvailable);
+    //hpi_display.add_samples(max30001.ecgSamplesAvailable);
     //hpi_display.add_samples();
-    hpi_display.do_set_scale();
+    // /hpi_display.do_set_scale();
     // Serial.print("ECG:");
     // Serial.println(max30001.ecgSamplesAvailable);
     // draw_plotECG(fltECGSamples, max30001.ecgSamplesAvailable);
@@ -272,7 +278,7 @@ void loop() {
     for (int i = 0; i < max30001.biozSamplesAvailable; i++) {
       fltBIOZSamples[i] = (float)(max30001.s32BIOZData[i] * resp_mult);
       setData(max30001.s32BIOZData[i], 0, false);
-      hpi_display.draw_plotresp(fltBIOZSamples[i]);  //, max30001.biozSamplesAvailable);
+      //hpi_display.draw_plotresp(fltBIOZSamples[i]);  //, max30001.biozSamplesAvailable);
       // send_data_serial_port();
     }
     // Serial.print("ECG:");
