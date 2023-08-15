@@ -314,8 +314,8 @@ void draw_header(lv_obj_t *parent) {
 
   // Label for Symbols
   lv_obj_t *label_symbols = lv_label_create(parent);
-  lv_label_set_text(label_symbols, LV_SYMBOL_BATTERY_FULL " " LV_SYMBOL_BLUETOOTH);
-  lv_obj_align(label_symbols, LV_ALIGN_TOP_RIGHT, -5, 5);
+  lv_label_set_text(label_symbols, LV_SYMBOL_BATTERY_FULL " " LV_SYMBOL_BLUETOOTH " " LV_SYMBOL_USB);
+  lv_obj_align(label_symbols, LV_ALIGN_TOP_RIGHT, 0, 5);
 }
 
 void draw_footer(lv_obj_t *parent) {
@@ -399,10 +399,7 @@ void draw_footer(lv_obj_t *parent) {
   lv_obj_align_to(label_temp_sub, label_temp, LV_ALIGN_BOTTOM_MID, 0, 10);
   lv_obj_add_style(label_temp_sub, &style_sub, LV_STATE_DEFAULT);
 
-  // Label for Symbols
-  lv_obj_t *label_symbols = lv_label_create(parent);
-  lv_label_set_text(label_symbols, LV_SYMBOL_BATTERY_FULL " " LV_SYMBOL_BLUETOOTH);
-  lv_obj_align(label_symbols, LV_ALIGN_BOTTOM_RIGHT, -15, 0);
+  
 
   lv_obj_t *label_menu = lv_label_create(parent);
   lv_label_set_text(label_menu, "Press side wheel UP/DOWN for more charts");
@@ -557,6 +554,7 @@ void HealthyPi_Display::add_samples(int num_samples) {
 void HealthyPi_Display::draw_scr_chart_ecg(void) {
   scr_chart_ecg = lv_obj_create(NULL);
   draw_footer(scr_chart_ecg);
+  draw_header(scr_chart_ecg);
 
   lv_obj_add_style(scr_chart_ecg, &style_scr_back, 0);
 
@@ -564,7 +562,7 @@ void HealthyPi_Display::draw_scr_chart_ecg(void) {
 
   // Create Chart 1
   chart1 = lv_chart_create(scr_chart_ecg);
-  lv_obj_set_size(chart1, 460, 200);
+  lv_obj_set_size(chart1, 460, 180);
   lv_obj_set_style_bg_color(chart1, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
 
   lv_obj_set_style_size(chart1, 0, LV_PART_INDICATOR);
@@ -575,7 +573,7 @@ void HealthyPi_Display::draw_scr_chart_ecg(void) {
   lv_chart_set_div_line_count(chart1, 0, 0);
   lv_chart_set_update_mode(chart1, LV_CHART_UPDATE_MODE_CIRCULAR);
 
-  lv_obj_set_pos(chart1, 10, 4);
+  lv_obj_set_pos(chart1, 10, 25);
 
   static lv_obj_t *label_chart_title = lv_label_create(scr_chart_ecg);
   lv_label_set_text(label_chart_title, "Showing ECG");
