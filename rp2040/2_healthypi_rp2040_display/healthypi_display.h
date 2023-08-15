@@ -39,8 +39,8 @@ public:
 
     void draw_scr_chart_ecg(void);
     void draw_scr_chart_ppg(void);
-
-    void draw_scr_charts_ppg_only(void);
+    void draw_scr_chart_resp(void);
+    
     void draw_scr_charts_all(void);
 
     void updateEnv(int co2, int voc);

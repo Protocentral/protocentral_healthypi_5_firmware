@@ -35,12 +35,10 @@ lv_obj_t *label_co2_voc;
 
 // LVGL GUI Screens
 lv_obj_t *scr_main_menu;
-lv_obj_t *scr_chart_ecg;
-lv_obj_t *scr_chart_single_ecg;
 
-lv_obj_t *scr_charts_ecg;
+lv_obj_t *scr_chart_ecg;
 lv_obj_t *scr_chart_ppg;
-lv_obj_t *scr_charts_resp;
+lv_obj_t *scr_chart_resp;
 
 static lv_style_t style_sub;
 static lv_style_t style_hr;
@@ -54,18 +52,6 @@ enum hpi_scr_t hpi_current_screen = SCR_MAIN_MENU;
 int pos = 0;
 
 int pointCounter = 0;
-
-/*float y1_max = 0;
-float y1_min = 10000;
-
-float y2_max = 0;
-float y2_min = 10000;
-
-float y3_max = 0;
-float y3_min = 10000;
-
-static float gx = 0;
-*/
 
 #define SAMPLE_RATE 125
 
@@ -106,14 +92,16 @@ void HealthyPi_Display::init() {
 
   // draw_main_menu();
   
-  draw_scr_chart_ecg();
-  draw_scr_chart_ppg();
+  //draw_scr_chart_ecg();
+  //draw_scr_chart_ppg();
+  draw_scr_chart_resp();
   //draw_scr_charts_ppg_only();
   // draw_scr_charts_ecg_only();
   //    lv_scr_load(scr_all_charts);
   //    lv_scr_load(scr_main_menu);
-  get_screen(SCR_CHART_PPG);
+  //get_screen(SCR_CHART_PPG);
   //get_screen(SCR_CHART_ECG);
+  get_screen(SCR_CHART_RESP);
 
   //get_screen(SCR_CHARTS_PPG);
 }
@@ -139,7 +127,7 @@ void HealthyPi_Display::do_set_scale() {
   }
 }
 
-/*void HealthyPi_Display::draw_plotECG(float *data_ecg, int num_samples) {
+void HealthyPi_Display::draw_plotECG(float *data_ecg, int num_samples) {
   if (chart1_update == true) {
     for (int i = 0; i < num_samples; i++) {
       if (data_ecg[i] < y1_min) {
@@ -154,7 +142,6 @@ void HealthyPi_Display::do_set_scale() {
     }
   }
 }
-*/
 
 void HealthyPi_Display::draw_plotECG(float data_ecg) {
   if (chart1_update == true) {
@@ -386,6 +373,12 @@ void get_screen(enum hpi_scr_t get_scr) {
       chart3_update = false;
       hpi_current_screen = SCR_CHART_PPG;
       lv_scr_load(scr_chart_ppg);
+    case SCR_CHART_RESP:
+      chart1_update = true;
+      chart2_update = false;
+      chart3_update = false;
+      hpi_current_screen = SCR_CHART_RESP;
+      lv_scr_load(scr_chart_resp);
 
       break;
     default:
@@ -564,6 +557,39 @@ void HealthyPi_Display::draw_scr_chart_ppg(void) {
   ser1 = lv_chart_add_series(chart1, lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_PRIMARY_Y);
 }
 
+// Draw single PPG chart
+void HealthyPi_Display::draw_scr_chart_resp(void) {
+  scr_chart_resp = lv_obj_create(NULL);
+  draw_footer(scr_chart_resp);
+
+  lv_obj_add_style(scr_chart_resp, &style_scr_back, 0);
+
+  lv_group_t *g1 = lv_group_create();
+
+  // Create Chart 1
+  chart1 = lv_chart_create(scr_chart_resp);
+  lv_obj_set_size(chart1, 460, 200);
+  lv_obj_set_style_bg_color(chart1, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
+
+  lv_obj_set_style_size(chart1, 0, LV_PART_INDICATOR);
+  lv_chart_set_point_count(chart1, DISP_WINDOW_SIZE);
+  // lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);   /*Show lines and points too*
+  //lv_chart_set_range(chart1, LV_CHART_AXIS_PRIMARY_Y, -200, 200);
+  // lv_chart_set_range(chart1, LV_CHART_AXIS_SECONDARY_Y, 0, 1000);
+  lv_chart_set_div_line_count(chart1, 0, 0);
+  lv_chart_set_update_mode(chart1, LV_CHART_UPDATE_MODE_CIRCULAR);
+
+  lv_obj_set_pos(chart1, 10, 4);
+
+  static lv_obj_t *label_chart_title = lv_label_create(scr_chart_resp);
+  lv_label_set_text(label_chart_title, "Showing Resp.");
+  lv_obj_align_to(label_chart_title, chart1, LV_ALIGN_OUT_TOP_MID, 0, 20);
+  //lv_obj_add_style(label_rr_sub, &style_sub, LV_STATE_DEFAULT);
+
+  /* Data Series for main plot*/
+  ser1 = lv_chart_add_series(chart1, lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_PRIMARY_Y);
+}
+
 // Draw all charts screen
 void HealthyPi_Display::draw_scr_charts_all(void) {
   scr_chart_ecg = lv_obj_create(NULL);
@@ -712,8 +738,6 @@ void HealthyPi_Display::draw_scr_charts_all(void) {
   // lv_indev_set_group(indev_keypad, g1);
 }
 
-
-
 // Draw the main menu
 void HealthyPi_Display::draw_main_menu(void) {
   // Create main screen called scr_main_menu
@@ -754,45 +778,6 @@ void HealthyPi_Display::draw_main_menu(void) {
 
   lv_group_add_obj(g, roller1);
   lv_indev_set_group(indev_keypad, g);
-}
-
-// Draw ECG only screen
-void draw_scr_charts_ecg_only(void) {
-  scr_charts_ecg = lv_obj_create(NULL);
-
-  lv_group_t *g1 = lv_group_create();
-
-  // Create Chart 1
-  chart1 = lv_chart_create(scr_charts_ecg);
-  lv_obj_set_size(chart1, 480, 90 * 3);
-  lv_obj_set_style_bg_color(chart1, LV_COLOR_MAKE(0, 0, 0), LV_STATE_DEFAULT);
-
-  lv_obj_set_style_size(chart1, 0, LV_PART_INDICATOR);
-  lv_chart_set_point_count(chart1, DISP_WINDOW_SIZE);
-  // lv_chart_set_type(chart1, LV_CHART_TYPE_LINE);   /*Show lines and points too*
-  lv_chart_set_range(chart1, LV_CHART_AXIS_PRIMARY_Y, 0, 1000);
-  // lv_chart_set_range(chart1, LV_CHART_AXIS_SECONDARY_Y, 0, 1000);
-  lv_chart_set_div_line_count(chart1, 0, 0);
-  lv_chart_set_update_mode(chart1, LV_CHART_UPDATE_MODE_CIRCULAR);
-
-  lv_obj_set_pos(chart1, 0, 30);
-
-  /* Data Series for 3 plots*/
-  ser1 = lv_chart_add_series(chart1, lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_PRIMARY_Y);
-
-  // HR label style
-  static lv_style_t style_hr;
-  lv_style_init(&style_hr);
-  lv_style_set_text_color(&style_hr, lv_palette_main(LV_PALETTE_RED));
-  lv_style_set_text_font(&style_hr, &lv_font_montserrat_28);
-
-  // HR label
-  label_hr = lv_label_create(scr_charts_ecg);
-  lv_label_set_text(label_hr, "--");
-  lv_obj_align_to(label_hr, chart1, LV_ALIGN_TOP_RIGHT, -30, 0);
-  lv_obj_add_style(label_hr, &style_hr, LV_STATE_DEFAULT);
-
-  draw_header(scr_charts_ecg);
 }
 
 // Display flushing callback
