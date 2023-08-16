@@ -39,7 +39,7 @@ due to limitations with the LVGL library
 
 #include "protocentral_afe44xx.h"
 #include "Protocentral_spo2_algorithm.h"
-#include <protocentral_max30001.h>
+#include "src/protocentral_max30001.h"
 
 #include "images.h"
 
@@ -177,7 +177,8 @@ void setup() {
   delay(500);
   afe44xx.afe44xx_init();
   delay(500);
-  max30001.BeginECGBioZ();
+  //max30001.BeginECGBioZ();
+  max30001.begin(true, true);
   delay(500);
 
   Serial.println("Init complete");
@@ -234,13 +235,12 @@ void readPPGData() {
     if (afe44xx_raw_data.spo2 == -999) {
       DataPacket[19] = 0;
       sp02 = 0;
-      //hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, false);
+      hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, false);
     } else {
       DataPacket[19] = afe44xx_raw_data.spo2;
       sp02 = (uint8_t)afe44xx_raw_data.spo2;
       hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, true);
-      //hpi_display.updateHR((uint8_t)80);
-      //hpi_display.updateRR((uint8_t)20);
+
     }
 
     spo2_calc_done = true;
@@ -251,7 +251,7 @@ void readPPGData() {
 void loop() {
   unsigned long currentTime = millis();
 
-  // max30001.max30001ServiceAllInterrupts();
+  
   /*if (max30001.ecgSamplesAvailable > 0) {
     // EFIT configured for 16 samples
     for (int i = 0; i < max30001.ecgSamplesAvailable; i++) {
@@ -319,13 +319,15 @@ void loop() {
     BioZSkipSample = false;
   }*/
 
-  /*if (currentTime - prevTempCountTime >= TEMP_READ_INTERVAL) {
-    float tread = getTemperature();
+  if (currentTime - prevTempCountTime >= TEMP_READ_INTERVAL) {
+    float tread = (getTemperature()*1.8)+32;
     hpi_display.updateTemp(tread);
     prevTempCountTime = currentTime;
-  }*/
+  }
 
   readPPGData();
+
+  max30001.max30001ServiceAllInterrupts();
 
   float fl_ecg_data = 0; 
   ecg_data = max30001.getECGSamples();
@@ -339,6 +341,18 @@ void loop() {
     bioz_data = 0x00;
     setData(ecg_data, bioz_data, BioZSkipSample);
     BioZSkipSample = false;
+  }
+
+  if (max30001.rrAvailable == true)
+  {
+    // hpi_display.set_rr(max30001.rr);
+    //if (max30001.RtoR_ms > 0)
+    //{
+      //hpi_display.draw_plotRRI(max30001.RtoR_ms);
+      hpi_display.updateHR((uint8_t)(max30001.heartRate));
+      //hpi_display.updateRR((uint8_t)20);
+    //}
+    max30001.rrAvailable = false;
   }
 
   hpi_display.draw_plotECG(fl_ecg_data);

@@ -264,23 +264,23 @@ void HealthyPi_Display::draw_plotresp(float *data_resp, int num_samples) {
 
 void HealthyPi_Display::updateHR(uint8_t hr) {
   //if (chart1_update == true) {
-    lv_label_set_text_fmt(label_hr, "%d", hr);
+  lv_label_set_text_fmt(label_hr, "%d", hr);
   //}
 }
 
 void HealthyPi_Display::updateSpO2(uint8_t spo2, bool spo2_ok) {
   //if (chart2_update == true) {
-    if (spo2_ok == true) {
-      lv_label_set_text_fmt(label_spo2, "%d", spo2);
-    } else {
-      lv_label_set_text_fmt(label_spo2, "--");
-    }
+  if (spo2_ok == true) {
+    lv_label_set_text_fmt(label_spo2, "%d", spo2);
+  } else {
+    lv_label_set_text_fmt(label_spo2, "--");
+  }
   //}
 }
 
 void HealthyPi_Display::updateRR(uint8_t rr) {
   //if (chart3_update == true) {
-    lv_label_set_text_fmt(label_rr, "%d\n", rr);
+  lv_label_set_text_fmt(label_rr, "%d\n", rr);
   //}
 }
 
@@ -329,7 +329,7 @@ void draw_footer(lv_obj_t *parent) {
 
   // HR Number label
   label_hr = lv_label_create(parent);
-  lv_label_set_text(label_hr, "83");
+  lv_label_set_text(label_hr, "---");
   lv_obj_align(label_hr, LV_ALIGN_LEFT_MID, 20, 100);
   lv_obj_add_style(label_hr, &style_hr, LV_STATE_DEFAULT);
 
@@ -347,7 +347,7 @@ void draw_footer(lv_obj_t *parent) {
 
   // SPO2 Number label
   label_spo2 = lv_label_create(parent);
-  lv_label_set_text(label_spo2, "96");
+  lv_label_set_text(label_spo2, "---");
   lv_obj_align_to(label_spo2, label_hr, LV_ALIGN_OUT_RIGHT_TOP, 60, 0);
   lv_obj_add_style(label_spo2, &style_spo2, LV_STATE_DEFAULT);
 
@@ -365,7 +365,7 @@ void draw_footer(lv_obj_t *parent) {
 
   // RR Number label
   label_rr = lv_label_create(parent);
-  lv_label_set_text(label_rr, "20");
+  lv_label_set_text(label_rr, "---");
   lv_obj_align_to(label_rr, label_spo2, LV_ALIGN_OUT_RIGHT_TOP, 60, 0);
   lv_obj_add_style(label_rr, &style_rr, LV_STATE_DEFAULT);
 
@@ -383,7 +383,7 @@ void draw_footer(lv_obj_t *parent) {
 
   // Temp Number label
   label_temp = lv_label_create(parent);
-  lv_label_set_text(label_temp, "97.2");
+  lv_label_set_text(label_temp, "---");
   lv_obj_align_to(label_temp, label_rr, LV_ALIGN_OUT_RIGHT_TOP, 60, 0);
   lv_obj_add_style(label_temp, &style_temp, LV_STATE_DEFAULT);
 
@@ -399,11 +399,9 @@ void draw_footer(lv_obj_t *parent) {
   lv_obj_align_to(label_temp_sub, label_temp, LV_ALIGN_BOTTOM_MID, 0, 10);
   lv_obj_add_style(label_temp_sub, &style_sub, LV_STATE_DEFAULT);
 
-  
-
-  lv_obj_t *label_menu = lv_label_create(parent);
-  lv_label_set_text(label_menu, "Press side wheel UP/DOWN for more charts");
-  lv_obj_align(label_menu, LV_ALIGN_BOTTOM_MID, 0, 0);
+  //lv_obj_t *label_menu = lv_label_create(parent);
+  //lv_label_set_text(label_menu, "Press side wheel UP/DOWN for more charts");
+  //lv_obj_align(label_menu, LV_ALIGN_BOTTOM_MID, 0, 0);
 }
 
 void get_screen(enum hpi_scr_t get_scr) {
