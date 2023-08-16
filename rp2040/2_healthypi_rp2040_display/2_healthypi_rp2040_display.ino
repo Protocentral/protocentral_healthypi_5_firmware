@@ -53,7 +53,7 @@ void send_data_serial_port(void);
 uint8_t ppg_data_buff[20];
 uint8_t lead_flag = 0x04;
 uint8_t data_len = 20;
-uint8_t sp02;
+uint8_t spo2;
 uint16_t ppg_stream_cnt = 1;
 int16_t ppg_wave_ir;
 
@@ -72,6 +72,8 @@ signed long ecg_data;
 signed long bioz_data;
 
 uint8_t global_spo2 = 96;
+uint8_t global_hr = 0;
+uint8_t global_rr = 0;
 
 float ecg_mult = 0.00004768;  //VREF=1000 mV, GAIN=160 V/V
 float resp_mult = 1.49011612;
@@ -80,7 +82,6 @@ MAX30001 max30001(MAX30001_CS_PIN);
 AFE44XX afe44xx(AFE44XX_CS_PIN, AFE44XX_PWDN_PIN);
 HealthyPi_Display hpi_display;
 
-spo2_algorithm spo2;
 afe44xx_data afe44xx_raw_data;
 
 const bool hpi_ble_enabled = true;
@@ -113,7 +114,7 @@ void send_data_serial_port(void) {
       Serial2.write(DataPacketHeader[i]);
   }
 
-  for (int i = 0; i < 20; i++) {
+  for (int i = 0; i < 22; i++) {
     Serial.write(DataPacket[i]);  // transmit the data over USB
     if (hpi_ble_enabled == true)
       Serial2.write(DataPacket[i]);
@@ -234,13 +235,12 @@ void readPPGData() {
 
     if (afe44xx_raw_data.spo2 == -999) {
       DataPacket[19] = 0;
-      sp02 = 0;
+      //spo2 = 0;
       hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, false);
     } else {
       DataPacket[19] = afe44xx_raw_data.spo2;
-      sp02 = (uint8_t)afe44xx_raw_data.spo2;
+      //spo2 = (uint8_t)afe44xx_raw_data.spo2;
       hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, true);
-
     }
 
     spo2_calc_done = true;
@@ -251,7 +251,7 @@ void readPPGData() {
 void loop() {
   unsigned long currentTime = millis();
 
-  
+
   /*if (max30001.ecgSamplesAvailable > 0) {
     // EFIT configured for 16 samples
     for (int i = 0; i < max30001.ecgSamplesAvailable; i++) {
@@ -320,7 +320,11 @@ void loop() {
   }*/
 
   if (currentTime - prevTempCountTime >= TEMP_READ_INTERVAL) {
-    float tread = (getTemperature()*1.8)+32;
+    float tread = (getTemperature() * 1.8) + 32;
+
+    uint16_t temp_u16 = (uint16_t)(tread * 100);
+    DataPacket[17] = (uint8_t)temp_u16;
+    DataPacket[18] = (uint8_t)(temp_u16 >> 8);
     hpi_display.updateTemp(tread);
     prevTempCountTime = currentTime;
   }
@@ -329,9 +333,9 @@ void loop() {
 
   max30001.max30001ServiceAllInterrupts();
 
-  float fl_ecg_data = 0; 
+  float fl_ecg_data = 0;
   ecg_data = max30001.getECGSamples();
-  fl_ecg_data = ecg_data*ecg_mult;
+  fl_ecg_data = ecg_data * ecg_mult;
 
   if (BioZSkipSample == false) {
     bioz_data = max30001.getBioZSamples();
@@ -343,14 +347,15 @@ void loop() {
     BioZSkipSample = false;
   }
 
-  if (max30001.rrAvailable == true)
-  {
+  if (max30001.rrAvailable == true) {
     // hpi_display.set_rr(max30001.rr);
     //if (max30001.RtoR_ms > 0)
     //{
-      //hpi_display.draw_plotRRI(max30001.RtoR_ms);
-      hpi_display.updateHR((uint8_t)(max30001.heartRate));
-      //hpi_display.updateRR((uint8_t)20);
+    //hpi_display.draw_plotRRI(max30001.RtoR_ms);
+    hpi_display.updateHR((uint8_t)(max30001.heartRate));
+    DataPacket[20] = max30001.heartRate;
+    DataPacket[21] = global_rr;
+    //hpi_display.updateRR((uint8_t)20);
     //}
     max30001.rrAvailable = false;
   }

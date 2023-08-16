@@ -45,7 +45,7 @@ void send_data_serial_port(void);
 uint8_t ppg_data_buff[20];
 uint8_t lead_flag = 0x04;
 uint8_t data_len = 20;
-uint8_t sp02;
+uint8_t spo2;
 uint16_t ppg_stream_cnt = 1;
 int16_t ppg_wave_ir;
 
@@ -292,13 +292,13 @@ void loop()
       if (afe44xx_raw_data.spo2 == -999)
       {
         DataPacket[19] = 0;
-        sp02 = 0;
+        spo2 = 0;
         // hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, false);
       }
       else
       {
         DataPacket[19] = afe44xx_raw_data.spo2;
-        // sp02 = (uint8_t)afe44xx_raw_data.spo2;
+        // spo2 = (uint8_t)afe44xx_raw_data.spo2;
         // hpi_display.updateSpO2((uint8_t)afe44xx_raw_data.spo2, true);
         // hpi_display.updateHR((uint8_t)80);
         // hpi_display.updateRR((uint8_t)20);

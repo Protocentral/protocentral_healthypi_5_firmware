@@ -73,11 +73,15 @@ int16_t spo2_ir, spo2_red;
 uint8_t ecg_data_buff[40];
 uint8_t resp_data_buff[40];
 uint8_t ppg_data_buff[20];
-int sp02;
+
 uint32_t ecg_stream_cnt = 0;
 uint32_t resp_stream_cnt = 0;
 uint16_t ppg_stream_cnt = 0;
-float temp;
+
+float global_temp;
+int global_spo2;
+int global_hr;
+int global_rr;
 
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
@@ -244,24 +248,24 @@ void handle_ble_stack()
 
   if (1) //(spo2_calc_done)
   {
-    sp02 = 96;
+    //sp02 = 96;
 
     uint8_t spo2_att_ble[5];
     spo2_att_ble[0] = 0x00;
-    spo2_att_ble[1] = (uint8_t)sp02;
-    spo2_att_ble[2] = (uint8_t)(sp02 >> 8);
+    spo2_att_ble[1] = (uint8_t)global_spo2;
+    spo2_att_ble[2] = (uint8_t)(global_spo2 >> 8);
     spo2_att_ble[3] = 0;
     spo2_att_ble[4] = 0;
     sp02_Characteristic->setValue(spo2_att_ble, 5);
     sp02_Characteristic->notify();
     spo2_calc_done = false;
 
-    sp02 = 72;
+    //sp02 = 72;
 
     uint8_t hr_att_ble[5];
     hr_att_ble[0] = 0x00;
-    hr_att_ble[1] = (uint8_t)sp02;
-    hr_att_ble[2] = (uint8_t)(sp02 >> 8);
+    hr_att_ble[1] = (uint8_t)global_hr;
+    hr_att_ble[2] = (uint8_t)(global_hr >> 8);
     hr_att_ble[3] = 0;
     hr_att_ble[4] = 0;
 
@@ -289,8 +293,8 @@ void handle_ble_stack()
 
   if (1) //(temp_data_ready)
   {
-    temp = 37.5;
-    uint16_t temp_uint = (uint16_t)(temp * 100);
+    //global_temp = 37.5;
+    uint16_t temp_uint = (uint16_t)(global_temp * 100);
     uint8_t temp_data[2];
     temp_data[0] = (uint8_t)temp_uint;
     temp_data[1] = (uint8_t)(temp_uint >> 8);
@@ -401,7 +405,11 @@ void hPiProcessData(char rxch)
 
         setData(ecg, resp, respdataTag, spo2_ir);
 
-        sp02 = (int)(CES_Pkt_Data_Counter[19]);
+        global_temp = (float)(((int)(CES_Pkt_Data_Counter[17] | CES_Pkt_Data_Counter[18] << 8)) / 100.00);
+        global_spo2 = (int)(CES_Pkt_Data_Counter[19]);
+        global_hr= (int)(CES_Pkt_Data_Counter[20]);
+        global_rr = (int)(CES_Pkt_Data_Counter[21]);
+
         spo2_calc_done = true;
 
         ecs_rx_state = CESState_Init;
