@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.1
+
+- Fix: the `09_RawProcessing` tutorial streamed OpenView but never enabled the
+  I²C sensors, so the OpenView **temperature** channel read 0. It now calls
+  `enableSensors()` (temperature + battery), matching the full firmware.
+
 ## 2.0.0 — NEXT rewrite
 
 A complete rewrite of the HealthyPi 5 RP2040 firmware as a proper Arduino library

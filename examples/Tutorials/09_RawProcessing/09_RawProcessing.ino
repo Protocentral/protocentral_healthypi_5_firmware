@@ -37,6 +37,10 @@ void setup()
                                    // the OpenView stream carries RR = 0. It is a
                                    // separate broker sink — enabling it does NOT
                                    // take samples away from your loop().
+  HealthyPi5.enableSensors();      // I2C temperature (MAX30205/AS6221) + battery.
+                                   // Required for the OpenView temp channel: it
+                                   // is fed from this poll, so without it the
+                                   // stream's temperature reads 0.
   HealthyPi5.streamOpenView();     // optional: also feed OpenView 2 in parallel
   HealthyPi5.begin();              // dual-core spine + broker + watchdog
 }
