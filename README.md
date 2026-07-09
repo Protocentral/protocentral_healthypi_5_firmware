@@ -1,82 +1,210 @@
-# HealthyPi 5 Firmware
+# HealthyPi 5 NEXT — Arduino Firmware
 
-![HealthyPi 5](docs/images/healthypi5.jpg)
+<p align="center">
+  <img src="extras/docs/images/healthypi5.jpg" alt="ProtoCentral HealthyPi 5 board" width="520">
+</p>
 
-Don't have one? You can pre-order now at [Crowd Supply](https://www.crowdsupply.com/protocentral/healthypi-5)
+<p align="center">
+  <b>Buy a HealthyPi 5:</b>
+  <a href="https://protocentral.com/product/healthypi-5-vital-signs-monitoring-hat-kit/">ProtoCentral Store</a>
+  &nbsp;·&nbsp;
+  <a href="https://www.mouser.com/c/?m=ProtoCentral&q=HealthyPi%205">Mouser</a>
+  &nbsp;·&nbsp;
+  <a href="https://www.crowdsupply.com/protocentral/healthypi-5">Crowd Supply</a>
+</p>
 
-HealthyPi 5 is the latest evolution of the HealthyPi series. It is a robust, feature-rich, open-source development board that allows you to explore many different biosignals with minimal effort. Whether you need a simple monitor for a specific vital sign or a complete health-sensor platform, HealthyPi 5 is an extensible solution to to your health-data challenges. Out of the box, it can handle electrocardiogram (ECG), respiration, photoplethysmography (PPG), oxygen saturation (SpO₂), and body temperature data. And it’s easy to upgrade as well! Using the Qwiic connectors on the Pro-Carrier Board, you can leverage external sensor modules to capture and analyze additional biosignals, such as galvanic skin response (GSR), electroencephalogram (EEG), and electromyogram (EMG) data.
+> **v2.0.0 is a complete rewrite** — the production **NEXT** dual-core architecture,
+> packaged as an Arduino library. The previous 2023 sketches are preserved on the
+> [`v1-legacy`](https://github.com/Protocentral/protocentral_healthypi_5_firmware/tree/v1-legacy)
+> tag. The ESP32-C3 (BLE / Wi-Fi) firmware has moved to
+> [`healthybridge-esp32`](https://github.com/Protocentral/healthybridge-esp32).
+> See [`CHANGELOG.md`](CHANGELOG.md).
 
-## Features
+Arduino-framework firmware for the [ProtoCentral HealthyPi 5](https://protocentral.com/product/healthypi-5-vital-signs-monitoring-hat-kit/)
+biosignal monitoring board (RP2040 main MCU). It is the **maker- and
+educator-friendly** member of the HealthyPi 5 NEXT firmware family: from
+single-sensor sketches you can read top to bottom, up to a full dual-core
+firmware that is byte-compatible with **OpenView 2** and the production NEXT
+firmware.
 
-* RP2040 dual-core ARM Cortex M0 microcontroller
-* ESP32C3 RISC-V module with BLE and Wi-Fi support
-* MAX30001 analog front end for ECG and respiration measurement
-* AFE4400 analog front end for PPG
-* MAX30205 temperature sensor via onboard Qwiic/I²C connectors
-* 40-pin Raspberry Pi HAT connector (also used to connect our Display Add-On Module)
-* 1x USB Type-C connector for communication with a computer and programming the RP2040
-* 1x USB Type-C connector for programming and debugging the ESP32 module
-* Onboard MicroSD card slot
-* On-board Li-Ion battery management with charging through USB
+HealthyPi 5 is an open-source development board for exploring biosignals —
+electrocardiogram (ECG), respiration, photoplethysmography (PPG), oxygen
+saturation (SpO₂), and body temperature.
 
-## Repository Contents
+> **This repository is the Arduino firmware for the RP2040 Main MCU.** Wireless
+> (BLE / Wi-Fi) is not handled here — it is done by the companion **ESP32-C3
+> "HealthyBridge"** co-processor firmware in
+> [Protocentral/healthybridge-esp32](https://github.com/Protocentral/healthybridge-esp32),
+> which speaks the same UART HealthyBridge wire protocol. See
+> [Wireless](#wireless-ble--wi-fi).
 
-This repository contains only the firmware for the HealthyPi 5 system. If you're looking for the hardware design files, they're located in their own repository [here](https://github.com/Protocentral/protocentral_healthypi_5).
+## Why "NEXT"?
 
-* _/rp2040_ - Arduino firmware source code for the RP2040 main microcontroller
-* _/esp32_ - Arduino firmware source code for the ESP32 module
-* _/test_programs_ - Test programs used during the development for testing the hardware
+The earlier HealthyPi 5 Arduino sketches were single-core and streamed on a
+best-effort basis — under load they could drop samples, and several public
+examples were mis-pinned for current board revisions. **NEXT** is the ground-up
+rebuild of the HealthyPi 5 firmware around a **dual-core, lossless-by-design**
+data path: one RP2040 core does nothing but acquire sensor samples, while the
+other runs every consumer (DSP, USB/OpenView, SD, wireless bridge) as a
+scheduled task. The two cores communicate through a single lock-free ring, which
+makes guaranteed-lossless 128 SPS sampling a property the architecture *enforces*
+rather than one you tune for.
 
-## License Information
+This repository brings that **same NEXT architecture to the Arduino framework**
+(the [`arduino-pico`](https://github.com/earlephilhower/arduino-pico) core), so
+makers and educators get the robust production design in an Arduino IDE workflow —
+while staying byte-compatible with the NEXT firmware and OpenView 2 so it
+interoperates with the rest of the ecosystem.
 
-This product is open source! Please see the LICENSE.md file for more information.
+## Hardware features
 
-## Getting Started
-_Getting Started Guide coming soon..._
+- **RP2040** dual-core ARM Cortex-M0+ Main MCU, 16 MB onboard flash
+- **ESP32-C3** RISC-V co-processor with BLE and Wi-Fi (separate firmware)
+- **MAX30001** analog front end — ECG and respiration
+- **AFE4400** analog front end — PPG (SpO₂)
+- **MAX30205** I²C body-temperature sensor
+- **MicroSD** card slot for onboard recording
+- On-board **Li-Ion** battery management with USB charging
+- 40-pin Raspberry Pi **HAT** connector (also drives the Display Add-On Module)
 
-## License Information
+Revisions **5.2 through 5.7 are electrically identical**, so one pin map serves
+all of them — see [`docs/PIN_MAP.md`](docs/PIN_MAP.md).
 
-![License](license_mark.svg)
+## The firmware family
 
-This product is open source! Both, our hardware and software are open source and licensed under the following licenses:
+| Repo | MCU | Framework | Role |
+|---|---|---|---|
+| [`healthypi5_next_rp2040`](https://github.com/Protocentral/healthypi5_next_rp2040) | RP2040 | Pico SDK + FreeRTOS | production main MCU (lossless, dual-core) |
+| [`healthybridge-esp32`](https://github.com/Protocentral/healthybridge-esp32) | ESP32-C3 | ESP-IDF + NimBLE | production wireless co-processor |
+| **`healthypi5_next_arduino`** (this) | RP2040 (+ESP32-C3) | **Arduino** | teaching / maker reference, OpenView-compatible |
 
-Hardware
----------
+## What's in this repo
 
-**All hardware is released under the [CERN-OHL-P v2](https://ohwr.org/cern_ohl_p_v2.txt)** license.
+| Folder | What it is |
+|---|---|
+| [`libraries/HealthyPi5/`](libraries/HealthyPi5) | The runtime library: the canonical **`board.h`** pin map **and** the dual-core NEXT spine (acquisition, broker, OpenView, HealthyBridge, SD, watchdog). |
+| [`examples/Tutorials/`](examples/Tutorials) | **11 standalone sketches** (01–11), one signal/idea at a time, for the Serial Plotter/Monitor, OpenView 2, wireless, and SD logging. Start here to learn the board. |
+| [`examples/Applications/`](examples/Applications) | The full dual-core NEXT firmware (headless). |
+| [`scripts/`](scripts) | `install-core.sh`, `build.sh`, `upload.sh` — one-command setup, compile, and flash (see [Command-line workflow](#command-line-workflow-scripts)). |
+| [`extras/docs/`](extras/docs) | Pin map and the two-chip wireless model. See [Documentation](#documentation). |
 
-Copyright CERN 2020.
+## Getting started (Arduino IDE)
 
-This source describes Open Hardware and is licensed under the CERN-OHL-P v2.
+1. **Install the board core.** In *Boards Manager*, install
+   **[`arduino-pico`](https://github.com/earlephilhower/arduino-pico)** (Earle
+   Philhower). Select board **"Raspberry Pi Pico"**.
+2. **Install the sensor libraries** (*Library Manager*):
+   - **ProtoCentral MAX30001** — v2.0.0 or newer (ECG / BioZ / heart rate)
+   - **ProtoCentral AFE4490 PPG and SpO2 boards library** — provides the AFE4400
+     driver **and** the SpO₂ algorithm (the board's PPG AFE is an **AFE4400**, not
+     a MAX3010x)
+3. **Install the `HealthyPi5` library.** Copy [`libraries/HealthyPi5/`](libraries/HealthyPi5)
+   into your Arduino libraries folder (e.g. `~/Documents/Arduino/libraries/`). It
+   provides the canonical `board.h` every sketch uses.
+4. **Open a sketch** from `examples/` — e.g.
+   [`examples/Tutorials/01_ECG_Plotter`](examples/Tutorials/01_ECG_Plotter) — and
+   click **Upload**.
+   - For the **Applications** (`examples/Applications/…`), also set
+     **Tools → os: "FreeRTOS SMP"** before uploading.
+5. **View the output:** open **Tools → Serial Plotter** (or **Serial Monitor**)
+   at **115200 baud** for the teaching sketches; use **OpenView 2** for the
+   multi-channel binary stream.
 
-You may redistribute and modify this documentation and make products
-using it under the terms of the CERN-OHL-P v2 (https:/cern.ch/cern-ohl).
-This documentation is distributed WITHOUT ANY EXPRESS OR IMPLIED
-WARRANTY, INCLUDING OF MERCHANTABILITY, SATISFACTORY QUALITY
-AND FITNESS FOR A PARTICULAR PURPOSE. Please see the CERN-OHL-P v2
-for applicable conditions
+> Prefer the command line? See [Command-line workflow](#command-line-workflow-scripts)
+> at the end — it also flashes over the Raspberry Pi Debug Probe.
 
-Software
---------
+## The `HealthyPi5` library
 
-**All software is released under the MIT License(http://opensource.org/licenses/MIT).**
+`libraries/HealthyPi5/` plays two roles:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+- **`board.h`** — the single source of truth for pins (rev 5.2–5.7). Every sketch
+  includes it via the `HPI_PIN_*` macros, so no GPIO is ever hardcoded. The 9
+  basic teaching sketches use **only** this.
+- **The dual-core runtime** — the whole NEXT spine (core1 lossless acquisition
+  into a lock-free ring; core0 broker + per-sink queues + OpenView + HealthyBridge
+  + SD + telemetry + hardware watchdog). The Applications are thin sketches
+  over it. Requires the arduino-pico **FreeRTOS-SMP** variant (`#include <FreeRTOS.h>`).
 
-Documentation
--------------
-**All documentation is released under [Creative Commons Share-alike 4.0 International](http://creativecommons.org/licenses/by-sa/4.0/).**
-![CC-BY-SA-4.0](https://i.creativecommons.org/l/by-sa/4.0/88x31.png)
+> **On-panel display (LCD) is not supported in this release.** The board's HAT
+> connector can drive the Display Add-On Module, but the LVGL vitals-screen driver
+> is still in bring-up and has been held back. It will return in a later version.
 
-You are free to:
+## Tutorials (`examples/Tutorials/`)
 
-* Share — copy and redistribute the material in any medium or format
-* Adapt — remix, transform, and build upon the material for any purpose, even commercially.
-The licensor cannot revoke these freedoms as long as you follow the license terms.
+Single-purpose, read-top-to-bottom sketches. **01–07** bring up one sensor each;
+**08–11** are the more advanced ones (OpenView, your-own-DSP, wireless, SD).
 
-Under the following terms:
+| # | Sketch | Sensor | How to view it |
+|---|---|---|---|
+| 01 | `01_ECG_Plotter` | MAX30001 (ECG) | Serial **Plotter** @ 115200 |
+| 02 | `02_Respiration_Plotter` | MAX30001 (BioZ) | Serial **Plotter** |
+| 03 | `03_PPG_Plotter` | AFE4400 | Serial **Plotter** (IR + RED) |
+| 04 | `04_SpO2` | AFE4400 | Serial **Monitor** (SpO₂ %, no-finger safe) |
+| 05 | `05_HeartRate` | MAX30001 (RtoR) | Serial **Monitor** (bpm + R-R) |
+| 06 | `06_Temperature` | MAX30205 (I²C) | Serial **Monitor** (°C, absent-safe) |
+| 07 | `07_Vitals_Serial` | all three | Serial **Monitor** (combined line) |
+| 08 | `08_OpenView_Stream` | all sensors | **OpenView 2** (29-byte binary frame) |
+| 09 | `09_RawProcessing` | all sensors | your own DSP in `loop()` over the dual-core spine |
+| 10 | `10_Wireless_Bridge` | all sensors | **ESP32-C3** → BLE / Wi-Fi (HealthyBridge) |
+| 11 | `11_SD_Datalog` | all sensors | record raw waveforms to a microSD card (`/REC*.BIN`) |
 
-* Attribution — You must give appropriate credit, provide a link to the license, and indicate if changes were made. You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use.
-* ShareAlike — If you remix, transform, or build upon the material, you must distribute your contributions under the same license as the original.
+See [`examples/Tutorials/README.md`](examples/Tutorials/README.md) for setup, pins,
+and tips.
 
-Please check [*LICENSE.md*](LICENSE.md) for detailed license descriptions.
+### Two visualisation paths
+
+- **Arduino Serial Plotter / Monitor** — the right tool for single- or few-channel
+  *numeric* output (sketches 01–07), at **115200 baud**.
+- **OpenView 2** — for the full *multi-channel binary* stream (08 and the
+  Applications). The Serial Plotter can't parse that packet; that's the one thing
+  it doesn't do.
+
+## Application firmware (`examples/Applications/`)
+
+The complete headless firmware, a thin sketch over the `HealthyPi5` library.
+Needs **os: FreeRTOS SMP**.
+
+| Sketch | What it does |
+|---|---|
+| [`HealthyPi5_NEXT`](examples/Applications/HealthyPi5_NEXT) | The full headless firmware: lossless dual-core acquisition, OpenView 2 over USB-CDC, host command plane, config persistence, SD recording, I²C temp/battery, and the HealthyBridge link to the ESP32-C3. 1 Hz `HPI_INSTR` telemetry + hardware watchdog. |
+
+## Wireless (BLE / Wi-Fi)
+
+The RP2040 has **no radio** — it's a plain RP2040, not a Pico W. All wireless is
+done by the on-board **ESP32-C3**, which runs its own firmware,
+[`healthybridge-esp32`](https://github.com/Protocentral/healthybridge-esp32),
+and owns both radios. The RP2040 streams to it over the **HealthyBridge** UART
+link; BLE and Wi-Fi share the same RP2040-side code — the radio is chosen on the
+ESP32. Learn the wire format in
+[`10_Wireless_Bridge`](examples/Tutorials/10_Wireless_Bridge); see
+[`docs/WIRELESS.md`](docs/WIRELESS.md) for the two-chip model and bring-up.
+
+## Command-line workflow (`scripts/`)
+
+For CI, batch builds, or flashing over the Raspberry Pi Debug Probe, the repo
+ships three scripts (need [`arduino-cli`](https://arduino.github.io/arduino-cli/)):
+
+| Script | Purpose |
+|---|---|
+| `./scripts/install-core.sh` | Register + install the arduino-pico core and the ProtoCentral sensor libraries. Idempotent. |
+| `./scripts/build.sh <target>` | Compile one target (or `all` / `tutorials`) against the in-repo library. |
+| `./scripts/upload.sh <target>` | Build + flash. Default programmer is the **Raspberry Pi Debug Probe** (SWD); `--serial` falls back to USB/UF2, `--monitor` opens the UART console. |
+
+```bash
+./scripts/install-core.sh                 # one-time setup
+./scripts/upload.sh ecg --monitor         # teaching: ECG on the Serial Plotter/Monitor
+./scripts/upload.sh next                  # HealthyPi5_NEXT (OpenView 2 + wireless + SD)
+```
+
+**Targets:** `next` · `openview` · `raw` · `datalog` ·
+`ecg` `resp` `ppg` `spo2` `hr` `temp` `vitals` `wireless` · `tutorials` (all
+standalone tutorial sketches) · `all`.
+
+## Documentation
+
+- [`extras/docs/PIN_MAP.md`](extras/docs/PIN_MAP.md) — authoritative pin map + what the old sketch got wrong.
+- [`extras/docs/WIRELESS.md`](extras/docs/WIRELESS.md) — the RP2040 ↔ ESP32-C3 two-chip wireless model.
+
+## License
+
+MIT (first-party firmware). Third-party libraries retain their own licenses.

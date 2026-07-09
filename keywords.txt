@@ -1,0 +1,48 @@
+#######################################
+# HealthyPi5 — keywords.txt
+# Syntax coloring for the Arduino IDE
+#######################################
+
+#######################################
+# Datatypes / classes (KEYWORD1)
+#######################################
+HealthyPi5	KEYWORD1
+HealthyPi5Class	KEYWORD1
+HPISink	KEYWORD1
+hpi_sample_t	KEYWORD1
+hpi_vitals_t	KEYWORD1
+
+#######################################
+# Methods and functions (KEYWORD2)
+#######################################
+begin	KEYWORD2
+streamOpenView	KEYWORD2
+computeVitals	KEYWORD2
+enableCommands	KEYWORD2
+persistConfig	KEYWORD2
+recordSD	KEYWORD2
+recordStart	KEYWORD2
+recordStop	KEYWORD2
+recording	KEYWORD2
+enableSensors	KEYWORD2
+enableBridge	KEYWORD2
+enableLoopStream	KEYWORD2
+read	KEYWORD2
+available	KEYWORD2
+addSink	KEYWORD2
+onSample	KEYWORD2
+vitals	KEYWORD2
+vitalsEnabled	KEYWORD2
+temperature_x100	KEYWORD2
+temperaturePresent	KEYWORD2
+batteryPresent	KEYWORD2
+batterySoc	KEYWORD2
+batteryMillivolts	KEYWORD2
+uptimeSeconds	KEYWORD2
+deviceName	KEYWORD2
+streaming	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+HPI_ECG_SPS	LITERAL1
