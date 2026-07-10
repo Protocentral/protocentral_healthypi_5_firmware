@@ -45,7 +45,7 @@ METHOD="probe"        # probe (SWD, default) | serial (USB CDC / UF2)
 MONITOR=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    next|raw|openview|datalog)  TARGET="$1" ;;
+    next|raw|openview|datalog|display)  TARGET="$1" ;;
     ecg|resp|ppg|spo2|hr|temp|vitals|wireless) TARGET="$1" ;;
     --serial|--uf2)    METHOD="serial" ;;
     --probe|--swd)     METHOD="probe" ;;
@@ -63,6 +63,7 @@ case "$TARGET" in
   raw)        NAME="RawProcessing";       SKETCHDIR="Tutorials/09_RawProcessing";      OSOPT="os=freertos" ;;
   openview)   NAME="OpenView_Stream";     SKETCHDIR="Tutorials/08_OpenView_Stream";    OSOPT="" ;;
   datalog)    NAME="SD_Datalog";          SKETCHDIR="Tutorials/11_SD_Datalog";         OSOPT="os=freertos" ;;
+  display)    NAME="Display_Vitals";      SKETCHDIR="Tutorials/12_Display_Vitals";     OSOPT="os=freertos" ;;
   ecg)    NAME="ECG_Plotter"; SKETCHDIR="Tutorials/01_ECG_Plotter";         OSOPT="" ;;
   resp)   NAME="Respiration"; SKETCHDIR="Tutorials/02_Respiration_Plotter"; OSOPT="" ;;
   ppg)    NAME="PPG_Plotter"; SKETCHDIR="Tutorials/03_PPG_Plotter";         OSOPT="" ;;

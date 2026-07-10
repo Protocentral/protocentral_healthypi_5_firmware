@@ -135,14 +135,22 @@ all of them — see [`docs/PIN_MAP.md`](docs/PIN_MAP.md).
   + SD + telemetry + hardware watchdog). The Applications are thin sketches
   over it. Requires the arduino-pico **FreeRTOS-SMP** variant (`#include <FreeRTOS.h>`).
 
-> **On-panel display (LCD) is not supported in this release.** The board's HAT
-> connector can drive the Display Add-On Module, but the LVGL vitals-screen driver
-> is still in bring-up and has been held back. It will return in a later version.
+> **The library itself drives no display.** There is no LCD code in `src/`, and
+> there is deliberately no graphics dependency in `library.properties` — the
+> library owns both cores and every timing-critical path, and a display driver is
+> neither. The in-library LVGL vitals screen is still held back pending hardware
+> validation.
+>
+> You can still put vitals on a panel today:
+> [`12_Display_Vitals`](examples/Tutorials/12_Display_Vitals) drives an **ILI9488**
+> from the **sketch**, reading `HealthyPi5.vitals()` and `HealthyPi5.read()`
+> through the ordinary public API. Swap in any graphics library you like — the
+> core library neither knows nor cares.
 
 ## Tutorials (`examples/Tutorials/`)
 
 Single-purpose, read-top-to-bottom sketches. **01–07** bring up one sensor each;
-**08–11** are the more advanced ones (OpenView, your-own-DSP, wireless, SD).
+**08–12** are the more advanced ones (OpenView, your-own-DSP, wireless, SD, display).
 
 | # | Sketch | Sensor | How to view it |
 |---|---|---|---|
@@ -157,6 +165,7 @@ Single-purpose, read-top-to-bottom sketches. **01–07** bring up one sensor eac
 | 09 | `09_RawProcessing` | all sensors | your own DSP in `loop()` over the dual-core spine |
 | 10 | `10_Wireless_Bridge` | all sensors | **ESP32-C3** → BLE / Wi-Fi (HealthyBridge) |
 | 11 | `11_SD_Datalog` | all sensors | record raw waveforms to a microSD card (`/REC*.BIN`) |
+| 12 | `12_Display_Vitals` | all sensors | **ILI9488 SPI display** — vitals tiles + sweeping ECG, drawn from the sketch |
 
 See [`examples/Tutorials/README.md`](examples/Tutorials/README.md) for setup, pins,
 and tips.
@@ -229,9 +238,13 @@ ships three scripts (need [`arduino-cli`](https://arduino.github.io/arduino-cli/
 ./scripts/upload.sh next                  # HealthyPi5_NEXT (OpenView 2 + wireless + SD)
 ```
 
-**Targets:** `next` · `openview` · `raw` · `datalog` ·
+**Targets:** `next` · `openview` · `raw` · `datalog` · `display` ·
 `ecg` `resp` `ppg` `spo2` `hr` `temp` `vitals` `wireless` · `tutorials` (all
 standalone tutorial sketches) · `all`.
+
+`display` additionally needs the **"GFX Library for Arduino"** (Arduino_GFX),
+which `install-core.sh` installs for you. It is *not* a dependency of the
+HealthyPi 5 library — no other target requires it.
 
 ## Documentation
 

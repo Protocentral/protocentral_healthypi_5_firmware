@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- New tutorial `12_Display_Vitals`: heart rate, SpO₂, respiration, temperature and
+  battery as on-screen tiles plus a sweeping 128 SPS ECG trace, on an **ILI9488**
+  SPI panel. The display is driven **entirely from the sketch** (Arduino_GFX) via
+  the library's public API — the core library gains no display dependency, and
+  `library.properties` is unchanged. A slow panel only drops display samples; it
+  can never stall acquisition.
+
 ## 2.0.2
 
 - CI: Arduino Lint and example-compile workflows, matching the other ProtoCentral

@@ -46,4 +46,13 @@ arduino-cli lib install "ProtoCentral AFE4490 PPG and SpO2 boards library" || \
   echo "     (could not install — install it manually)"
 
 echo
+echo ">> Installing the display library (only 12_Display_Vitals needs it)"
+# Arduino_GFX drives the ILI9488 from the SKETCH. It is intentionally NOT in
+# library.properties `depends` — the core HealthyPi5 library has no display
+# dependency, and every other example builds without this.
+echo "   - GFX Library for Arduino"
+arduino-cli lib install "GFX Library for Arduino" || \
+  echo "     (could not install — only 'build.sh display' needs it)"
+
+echo
 echo ">> Done. Now build with: ./extras/extras/scripts/build.sh next"

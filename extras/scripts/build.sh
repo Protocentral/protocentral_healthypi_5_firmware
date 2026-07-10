@@ -9,6 +9,7 @@
 #   ./extras/extras/scripts/build.sh next            # only HealthyPi5_NEXT  (FreeRTOS spine)
 #   ./extras/extras/scripts/build.sh raw             # only RawProcessing  (DSP in loop())
 #   ./extras/extras/scripts/build.sh openview        # only 08_OpenView_Stream (single-core tutorials)
+#   ./extras/extras/scripts/build.sh display         # only 12_Display_Vitals (ILI9488; needs Arduino_GFX)
 #   ./extras/extras/scripts/build.sh tutorials        # all Tutorials/ Serial-Plotter sketches
 #   ./extras/extras/scripts/build.sh ecg|resp|ppg|spo2|hr|temp|vitals|wireless  # one Tutorials sketch
 #   ./extras/extras/scripts/build.sh next --upload   # build + upload (set PORT=/dev/cu.usbmodemXXXX)
@@ -53,7 +54,7 @@ TARGET="all"
 UPLOAD=0
 for arg in "$@"; do
   case "$arg" in
-    next|raw|openview|datalog|all) TARGET="$arg" ;;
+    next|raw|openview|datalog|display|all) TARGET="$arg" ;;
     ecg|ppg|spo2|resp|hr|temp|vitals|wireless|tutorials) TARGET="$arg" ;;
     --upload|-u)                              UPLOAD=1 ;;
     *) echo "Unknown argument: $arg" >&2; exit 2 ;;
@@ -112,6 +113,9 @@ case "$TARGET" in
     ;;
   datalog)
     build_one SD_Datalog     "$ROOT/examples/Tutorials/11_SD_Datalog"      "$FQBN_BASE:os=freertos"
+    ;;
+  display) # additionally needs the "GFX Library for Arduino" (Arduino_GFX)
+    build_one Display_Vitals "$ROOT/examples/Tutorials/12_Display_Vitals"  "$FQBN_BASE:os=freertos"
     ;;
   ecg)    build_one ECG_Plotter  "$ROOT/examples/Tutorials/01_ECG_Plotter"          "$FQBN_BASE" ;;
   resp)   build_one Respiration  "$ROOT/examples/Tutorials/02_Respiration_Plotter"  "$FQBN_BASE" ;;

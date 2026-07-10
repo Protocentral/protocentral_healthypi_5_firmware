@@ -176,7 +176,10 @@ public:
   void        setBattery(uint8_t soc, uint16_t mv, bool present);
 
   /* NOTE: on-panel display support (A10, LVGL) is NOT part of this release. It is
-   * held back pending hardware validation and will return in a later version. */
+   * held back pending hardware validation and will return in a later version.
+   * A sketch can drive a panel today WITHOUT any library support: read vitals()
+   * and read() from loop() and paint them with any graphics library. See
+   * examples/Tutorials/12_Display_Vitals (ILI9488 via Arduino_GFX). */
 
   /* Route HPI_INSTR telemetry + HPI_FAULT dumps to a text stream. Default is
    * Serial1 (UART0, GP0/GP1) — call before begin() to override. Never route

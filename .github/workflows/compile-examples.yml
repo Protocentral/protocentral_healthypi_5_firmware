@@ -53,6 +53,7 @@ jobs:
             sketches: |
               - examples/Tutorials/09_RawProcessing
               - examples/Tutorials/11_SD_Datalog
+              - examples/Tutorials/12_Display_Vitals
               - examples/Applications/HealthyPi5_NEXT
 
     steps:
@@ -75,6 +76,11 @@ jobs:
               version: 2.0.0
             # Bundles both protocentral_afe44xx.h and the SpO2 algorithm.
             - name: ProtoCentral AFE4490 PPG and SpO2 boards library
+            # Needed ONLY by 12_Display_Vitals, which drives an ILI9488 from the
+            # sketch. Deliberately absent from library.properties `depends`: the
+            # display is a sketch-level concern and the core library must not
+            # acquire a graphics dependency.
+            - name: GFX Library for Arduino
           sketch-paths: ${{ matrix.tier.sketches }}
           enable-deltas-report: true
           enable-warnings-report: true

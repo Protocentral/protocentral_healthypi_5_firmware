@@ -41,6 +41,7 @@ right tool, and that is what these sketches use.
 | 09 | `09_RawProcessing` | all sensors | your own DSP in `loop()` over the dual-core spine → Serial |
 | 10 | `10_Wireless_Bridge` | all sensors | vitals over HealthyBridge → **ESP32-C3** (BLE / Wi-Fi) |
 | 11 | `11_SD_Datalog` | all sensors | raw waveforms recorded to a microSD card (`/REC*.BIN`) |
+| 12 | `12_Display_Vitals` | all sensors | vitals tiles + sweeping ECG on an **ILI9488** SPI panel, drawn from the sketch (needs Arduino_GFX) |
 
 Build/flash any of them with the repo scripts, e.g.
 `./scripts/upload.sh ecg --monitor` (targets: `ecg resp ppg spo2 hr temp vitals
