@@ -1,0 +1,100 @@
+name: Release Firmware
+
+# Builds the HealthyPi5_NEXT application firmware and attaches its UF2 to the
+# release for the pushed tag. The UF2 is the artifact an end user actually wants:
+# hold BOOTSEL, plug the board in, drag the file onto the RPI-RP2 volume.
+#
+# The tutorials are teaching sketches and are deliberately NOT released as
+# binaries -- they are meant to be read and compiled. Compile coverage for them
+# lives in compile-examples.yml.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch: # build + upload the artifact only; publishes nothing
+
+permissions:
+  contents: write # required to create the release and upload the asset
+
+env:
+  FQBN: rp2040:rp2040:rpipico:os=freertos
+  SKETCH: examples/Applications/HealthyPi5_NEXT
+  PICO_INDEX: https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
+
+jobs:
+  firmware:
+    name: Build HealthyPi5_NEXT UF2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install arduino-cli
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Install the arduino-pico core
+        run: |
+          arduino-cli config init
+          arduino-cli config add board_manager.additional_urls "$PICO_INDEX"
+          arduino-cli core update-index
+          arduino-cli core install rp2040:rp2040
+
+      - name: Install sensor libraries
+        run: |
+          # Mirrors extras/scripts/install-core.sh. MAX30001 is pinned because
+          # HPIAcq.cpp targets its v2.0.0 polling API.
+          arduino-cli lib install "ProtoCentral MAX30001@2.0.0"
+          arduino-cli lib install "ProtoCentral AFE4490 PPG and SpO2 boards library"
+
+      - name: Compile
+        run: |
+          # The repo root is the library (1.5 format), so point --library at it
+          # rather than installing a second copy from the index.
+          arduino-cli compile \
+            --fqbn "$FQBN" \
+            --library "$GITHUB_WORKSPACE" \
+            --output-dir "$GITHUB_WORKSPACE/dist" \
+            --warnings default \
+            "$SKETCH"
+
+      - name: Name the artifact after the tag
+        id: pkg
+        run: |
+          src="$GITHUB_WORKSPACE/dist/HealthyPi5_NEXT.ino.uf2"
+          if [[ ! -f "$src" ]]; then
+            echo "::error::no UF2 produced at $src"
+            ls -la "$GITHUB_WORKSPACE/dist" || true
+            exit 1
+          fi
+          # github.ref_name is the tag on a tag push, the branch on a dispatch.
+          name="HealthyPi5_NEXT-${GITHUB_REF_NAME}.uf2"
+          mv "$src" "$GITHUB_WORKSPACE/dist/$name"
+          echo "uf2=dist/$name" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.pkg.outputs.name }}
+          path: ${{ steps.pkg.outputs.uf2 }}
+          if-no-files-found: error
+
+      - name: Attach the UF2 to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.pkg.outputs.uf2 }}
+          fail_on_unmatched_files: true
+          body: |
+            RP2040 application firmware for the HealthyPi 5, built from `${{ env.SKETCH }}`
+            with FQBN `${{ env.FQBN }}`.
+
+            **Flashing:** hold **BOOTSEL**, plug the board into USB, and copy
+            `${{ steps.pkg.outputs.name }}` onto the `RPI-RP2` volume that appears.
+
+            > **The ESP32-C3 co-processor firmware must be updated to match.**
+            > BLE / Wi-Fi run on the ESP32-C3, not the RP2040, and this firmware
+            > speaks the HealthyBridge link to it. Flash the matching release of
+            > [healthybridge-esp32](https://github.com/Protocentral/healthybridge-esp32)
+            > or wireless will not work.

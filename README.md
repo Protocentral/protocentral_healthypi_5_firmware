@@ -38,6 +38,16 @@ saturation (SpO₂), and body temperature.
 > which speaks the same UART HealthyBridge wire protocol. See
 > [Wireless](#wireless-ble--wi-fi).
 
+> [!IMPORTANT]
+> **You must also update the ESP32-C3 firmware.** The v2 NEXT firmware in this
+> repository talks to the co-processor over the **HealthyBridge Lite** binary
+> protocol, which the pre-v2 ESP32-C3 firmware does not speak. Flash the matching
+> release of
+> [`healthybridge-esp32`](https://github.com/Protocentral/healthybridge-esp32)
+> onto the ESP32-C3 as well — otherwise the RP2040 side runs fine, but **BLE and
+> Wi-Fi will not work**. Everything over USB (OpenView 2, the command plane) and
+> SD recording is unaffected.
+
 ## Why "NEXT"?
 
 The earlier HealthyPi 5 Arduino sketches were single-core and streamed on a
@@ -170,6 +180,23 @@ Needs **os: FreeRTOS SMP**.
 
 ## Wireless (BLE / Wi-Fi)
 
+> [!IMPORTANT]
+> **The ESP32-C3 firmware must be updated for this firmware to fully work.**
+> The RP2040 ↔ ESP32-C3 link uses the **HealthyBridge Lite** binary framing
+> (`0xAA55 | type | flags | len | seq | payload | crc16`), which is new in v2 and
+> is not understood by the ESP32-C3 firmware that shipped with the v1 sketches.
+> Until you flash the matching
+> [`healthybridge-esp32`](https://github.com/Protocentral/healthybridge-esp32)
+> release, the RP2040 will stream frames the co-processor silently ignores: no
+> BLE, no Wi-Fi. (It never stalls acquisition — the bridge is a drop-newest sink,
+> so USB/OpenView and SD keep working regardless.)
+>
+> Read the two counters in the 1 Hz `HPI_INSTR` telemetry line on UART0 to tell
+> the two failure modes apart: a climbing `hbdrop=` means the ESP32-C3 is absent
+> or not draining the UART at all, whereas `hbtx=` climbing with `hbdrop=0` means
+> the link is up and the co-processor is reading frames — if BLE is still dead in
+> that state, it is running mismatched firmware.
+
 The RP2040 has **no radio** — it's a plain RP2040, not a Pico W. All wireless is
 done by the on-board **ESP32-C3**, which runs its own firmware,
 [`healthybridge-esp32`](https://github.com/Protocentral/healthybridge-esp32),
@@ -178,6 +205,12 @@ link; BLE and Wi-Fi share the same RP2040-side code — the radio is chosen on t
 ESP32. Learn the wire format in
 [`10_Wireless_Bridge`](examples/Tutorials/10_Wireless_Bridge); see
 [`docs/WIRELESS.md`](docs/WIRELESS.md) for the two-chip model and bring-up.
+
+The ESP32-C3 firmware previously lived in an `esp32/` folder in this repository;
+it moved to [`healthybridge-esp32`](https://github.com/Protocentral/healthybridge-esp32)
+in v2.0.0, and the v1 sketch is preserved on the
+[`v1-legacy`](https://github.com/Protocentral/protocentral_healthypi_5_firmware/tree/v1-legacy)
+tag.
 
 ## Command-line workflow (`scripts/`)
 

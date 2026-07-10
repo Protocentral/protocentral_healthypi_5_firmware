@@ -1,0 +1,40 @@
+name: Arduino Lint
+
+on:
+  push:
+    paths:
+      - "library.properties"
+      - "keywords.txt"
+      - "src/**"
+      - "examples/**"
+      - ".github/workflows/arduino-lint.yml"
+  pull_request:
+    paths:
+      - "library.properties"
+      - "keywords.txt"
+      - "src/**"
+      - "examples/**"
+      - ".github/workflows/arduino-lint.yml"
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Arduino Lint
+        uses: arduino/arduino-lint-action@v1
+        with:
+          # "update" is correct: "ProtoCentral HealthyPi 5" is already in the
+          # Library Manager index.
+          library-manager: update
+          project-type: library
+          # NOTE: deliberately NOT `compliance: strict`. Strict promotes LP015
+          # ("library.properties name contains spaces") to an ERROR, and the
+          # published index name is "ProtoCentral HealthyPi 5". Renaming it to
+          # satisfy the rule would break Library Manager installs for existing
+          # users, so we lint at the default (specification) level, where the
+          # space is a warning. Same for LS008 (primary header
+          # Protocentral_HealthyPi_5.h vs. the spaced library name).

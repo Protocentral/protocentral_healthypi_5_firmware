@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.0.2
+
+- CI: Arduino Lint and example-compile workflows, matching the other ProtoCentral
+  libraries. Examples are compiled in both build tiers — stock `arduino-pico`
+  (tutorials 01–08, 10) and `os=freertos` (09, 11, `HealthyPi5_NEXT`).
+- CI: tagging a release now builds `HealthyPi5_NEXT` and attaches
+  `HealthyPi5_NEXT-<tag>.uf2` to the GitHub release.
+- Removed the stub `esp32/` folder. The ESP32-C3 firmware lives in
+  [`healthybridge-esp32`](https://github.com/Protocentral/healthybridge-esp32);
+  the README now states prominently that it **must be reflashed** for BLE / Wi-Fi
+  to work with v2, because the HealthyBridge Lite framing is new in v2.
+- Docs: fix the stale `#include <HealthyPi5.h>` in the `09_RawProcessing` README
+  (the header is `Protocentral_HealthyPi_5.h`).
+
 ## 2.0.1
 
 - Fix: the `09_RawProcessing` tutorial streamed OpenView but never enabled the

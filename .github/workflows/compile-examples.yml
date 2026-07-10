@@ -1,0 +1,80 @@
+name: Compile Examples
+
+on:
+  push:
+    paths:
+      - "src/**"
+      - "examples/**"
+      - "library.properties"
+      - ".github/workflows/compile-examples.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "examples/**"
+      - "library.properties"
+      - ".github/workflows/compile-examples.yml"
+  workflow_dispatch:
+
+# This library is rp2040-only (library.properties: architectures=rp2040), so the
+# matrix is not "many boards" but "the two build tiers of one board":
+#
+#   * stock arduino-pico  -- tutorials 01-08 and 10 include only <board.h> and
+#     talk to the sensor libraries directly. The runtime TUs in src/ are all
+#     #ifdef __FREERTOS-guarded, so they compile away to empty here. This tier
+#     therefore also proves those guards still hold.
+#   * os=freertos         -- tutorials 09/11 and the HealthyPi5_NEXT application
+#     pull in <Protocentral_HealthyPi_5.h>, which #errors without __FREERTOS.
+#
+# Keep this split in sync with extras/scripts/build.sh, which uses the same FQBNs.
+jobs:
+  build:
+    name: ${{ matrix.tier.name }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        tier:
+          - name: Raspberry Pi Pico (stock)
+            fqbn: rp2040:rp2040:rpipico
+            sketches: |
+              - examples/Tutorials/01_ECG_Plotter
+              - examples/Tutorials/02_Respiration_Plotter
+              - examples/Tutorials/03_PPG_Plotter
+              - examples/Tutorials/04_SpO2
+              - examples/Tutorials/05_HeartRate
+              - examples/Tutorials/06_Temperature
+              - examples/Tutorials/07_Vitals_Serial
+              - examples/Tutorials/08_OpenView_Stream
+              - examples/Tutorials/10_Wireless_Bridge
+
+          - name: Raspberry Pi Pico (FreeRTOS SMP)
+            fqbn: rp2040:rp2040:rpipico:os=freertos
+            sketches: |
+              - examples/Tutorials/09_RawProcessing
+              - examples/Tutorials/11_SD_Datalog
+              - examples/Applications/HealthyPi5_NEXT
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compile examples
+        uses: arduino/compile-sketches@v1
+        with:
+          fqbn: ${{ matrix.tier.fqbn }}
+          platforms: |
+            - name: rp2040:rp2040
+              source-url: https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
+          libraries: |
+            - source-path: ./
+            # library.properties `depends` is not auto-resolved by this action.
+            # MAX30001 is pinned: HPIAcq.cpp targets the v2.0.0 polling API
+            # (startECGBioZ / getECGSample), matching extras/scripts/install-core.sh.
+            - name: ProtoCentral MAX30001
+              version: 2.0.0
+            # Bundles both protocentral_afe44xx.h and the SpO2 algorithm.
+            - name: ProtoCentral AFE4490 PPG and SpO2 boards library
+          sketch-paths: ${{ matrix.tier.sketches }}
+          enable-deltas-report: true
+          enable-warnings-report: true

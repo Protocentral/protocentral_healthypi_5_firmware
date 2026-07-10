@@ -8,7 +8,7 @@ sketch.
 
 ```cpp
 #include <FreeRTOS.h>
-#include <HealthyPi5.h>
+#include <Protocentral_HealthyPi_5.h>
 
 void setup() {
   HealthyPi5.enableLoopStream();   // raw samples -> loop()
