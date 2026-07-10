@@ -228,14 +228,16 @@ ships three scripts (need [`arduino-cli`](https://arduino.github.io/arduino-cli/
 
 | Script | Purpose |
 |---|---|
-| `./scripts/install-core.sh` | Register + install the arduino-pico core and the ProtoCentral sensor libraries. Idempotent. |
-| `./scripts/build.sh <target>` | Compile one target (or `all` / `tutorials`) against the in-repo library. |
-| `./scripts/upload.sh <target>` | Build + flash. Default programmer is the **Raspberry Pi Debug Probe** (SWD); `--serial` falls back to USB/UF2, `--monitor` opens the UART console. |
+| `./extras/scripts/install-core.sh` | Register + install the arduino-pico core and the ProtoCentral sensor libraries. Idempotent. |
+| `./extras/scripts/build.sh <target>` | Compile one target (or `all` / `tutorials`) against the in-repo library. |
+| `./extras/scripts/upload.sh <target>` | Build + flash. Default programmer is the **Raspberry Pi Debug Probe** (SWD); `--serial` falls back to USB/UF2, `--monitor` opens the UART console. |
+| `./extras/scripts/display.sh` | One command for [`12_Display_Vitals`](examples/Tutorials/12_Display_Vitals): checks for **Arduino_GFX**, installs it if missing, then builds + flashes. Passes `--monitor` / `--serial` / `--port` straight through to `upload.sh`; `--build-only` compiles without flashing. |
 
 ```bash
-./scripts/install-core.sh                 # one-time setup
-./scripts/upload.sh ecg --monitor         # teaching: ECG on the Serial Plotter/Monitor
-./scripts/upload.sh next                  # HealthyPi5_NEXT (OpenView 2 + wireless + SD)
+./extras/scripts/install-core.sh          # one-time setup
+./extras/scripts/upload.sh ecg --monitor  # teaching: ECG on the Serial Plotter/Monitor
+./extras/scripts/upload.sh next           # HealthyPi5_NEXT (OpenView 2 + wireless + SD)
+./extras/scripts/display.sh --monitor     # 12_Display_Vitals on an ILI9488 panel
 ```
 
 **Targets:** `next` · `openview` · `raw` · `datalog` · `display` ·

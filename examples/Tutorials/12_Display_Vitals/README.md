@@ -60,7 +60,21 @@ ILI9488 320×480 SPI panel on **SPI1**, using the pins already in
 2. Install **"GFX Library for Arduino"** (Arduino_GFX, by Moon On Our Nation)
    from the Library Manager, in addition to the usual MAX30001 / AFE4490
    libraries.
-3. Upload. From the command line: `./extras/scripts/upload.sh display`.
+3. Upload.
+
+From the command line, one script does all of that:
+
+```bash
+./extras/scripts/display.sh              # install Arduino_GFX if needed, build, flash via Debug Probe
+./extras/scripts/display.sh --monitor    # ...and then open the UART0 telemetry console
+./extras/scripts/display.sh --serial     # flash over USB / UF2 instead of the probe
+./extras/scripts/display.sh --build-only # compile only, don't flash
+```
+
+It is a thin wrapper: after the Arduino_GFX check it hands off to
+`upload.sh display`, so the FQBN, Debug-Probe and UF2-fallback logic stay in one
+place. `./extras/scripts/upload.sh display` works too if you already have the
+library installed.
 
 ## Two gotchas worth knowing
 

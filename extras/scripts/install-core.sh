@@ -5,7 +5,7 @@
 # ============================================================================
 # One-time setup. Idempotent: safe to re-run.
 #
-#   ./extras/extras/scripts/install-core.sh
+#   ./extras/scripts/install-core.sh
 # ============================================================================
 set -euo pipefail
 
@@ -55,4 +55,4 @@ arduino-cli lib install "GFX Library for Arduino" || \
   echo "     (could not install — only 'build.sh display' needs it)"
 
 echo
-echo ">> Done. Now build with: ./extras/extras/scripts/build.sh next"
+echo ">> Done. Now build with: ./extras/scripts/build.sh next"

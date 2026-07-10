@@ -5,15 +5,15 @@
 # Compiles against the in-repo HealthyPi5 library (repo root: src/ + library.properties) plus whatever
 # sensor libraries are installed in your global Arduino libraries folder.
 #
-#   ./extras/extras/scripts/build.sh                 # build all examples
-#   ./extras/extras/scripts/build.sh next            # only HealthyPi5_NEXT  (FreeRTOS spine)
-#   ./extras/extras/scripts/build.sh raw             # only RawProcessing  (DSP in loop())
-#   ./extras/extras/scripts/build.sh openview        # only 08_OpenView_Stream (single-core tutorials)
-#   ./extras/extras/scripts/build.sh display         # only 12_Display_Vitals (ILI9488; needs Arduino_GFX)
-#   ./extras/extras/scripts/build.sh tutorials        # all Tutorials/ Serial-Plotter sketches
-#   ./extras/extras/scripts/build.sh ecg|resp|ppg|spo2|hr|temp|vitals|wireless  # one Tutorials sketch
-#   ./extras/extras/scripts/build.sh next --upload   # build + upload (set PORT=/dev/cu.usbmodemXXXX)
-#   CLEAN=1 ./extras/extras/scripts/build.sh         # wipe build cache first
+#   ./extras/scripts/build.sh                 # build all examples
+#   ./extras/scripts/build.sh next            # only HealthyPi5_NEXT  (FreeRTOS spine)
+#   ./extras/scripts/build.sh raw             # only RawProcessing  (DSP in loop())
+#   ./extras/scripts/build.sh openview        # only 08_OpenView_Stream (single-core tutorials)
+#   ./extras/scripts/build.sh display         # only 12_Display_Vitals (ILI9488; needs Arduino_GFX)
+#   ./extras/scripts/build.sh tutorials        # all Tutorials/ Serial-Plotter sketches
+#   ./extras/scripts/build.sh ecg|resp|ppg|spo2|hr|temp|vitals|wireless  # one Tutorials sketch
+#   ./extras/scripts/build.sh next --upload   # build + upload (set PORT=/dev/cu.usbmodemXXXX)
+#   CLEAN=1 ./extras/scripts/build.sh         # wipe build cache first
 #
 # Env overrides:
 #   FQBN_BASE   board FQBN without options   (default rp2040:rp2040:rpipico)
@@ -38,14 +38,14 @@ LIBRARY="$ROOT"
 # --- preflight --------------------------------------------------------------
 if ! command -v arduino-cli >/dev/null 2>&1; then
   echo "ERROR: arduino-cli not found in PATH." >&2
-  echo "       Install it, then run extras/extras/scripts/install-core.sh (or see the README)." >&2
+  echo "       Install it, then run extras/scripts/install-core.sh (or see the README)." >&2
   exit 1
 fi
 
 if ! arduino-cli core list 2>/dev/null | grep -qi 'rp2040:rp2040'; then
   echo "ERROR: the arduino-pico core (rp2040:rp2040) is not installed." >&2
   echo "       arduino-cli core install rp2040:rp2040" >&2
-  echo "       (add the board URL first — see extras/extras/scripts/install-core.sh)." >&2
+  echo "       (add the board URL first — see extras/scripts/install-core.sh)." >&2
   exit 1
 fi
 

@@ -12,14 +12,17 @@
 #   probe "U" / UART       ->  GP0 (RP2040 TX) -> probe RX, GP1 (RX) <- probe TX
 #                              (optional: lets --monitor read the HPI_INSTR console)
 #
-#   ./extras/extras/scripts/upload.sh                 # build HealthyPi5_NEXT, upload via Debug Probe
-#   ./extras/extras/scripts/upload.sh raw             # RawProcessing
-#   ./extras/extras/scripts/upload.sh openview        # 08_OpenView_Stream (single-core)
-#   ./extras/extras/scripts/upload.sh wireless        # 10_Wireless_Bridge (HealthyBridge/ESP32)
-#   ./extras/extras/scripts/upload.sh datalog         # 11_SD_Datalog (record waveforms to microSD)
-#   ./extras/extras/scripts/upload.sh next --monitor  # upload via probe, then open the UART console
-#   ./extras/extras/scripts/upload.sh next --serial   # use USB serial / UF2 instead of the probe
-#   ./extras/extras/scripts/upload.sh next --serial --port /dev/cu.usbmodem1101
+#   ./extras/scripts/upload.sh                 # build HealthyPi5_NEXT, upload via Debug Probe
+#   ./extras/scripts/upload.sh raw             # RawProcessing
+#   ./extras/scripts/upload.sh openview        # 08_OpenView_Stream (single-core)
+#   ./extras/scripts/upload.sh wireless        # 10_Wireless_Bridge (HealthyBridge/ESP32)
+#   ./extras/scripts/upload.sh datalog         # 11_SD_Datalog (record waveforms to microSD)
+#   ./extras/scripts/upload.sh display         # 12_Display_Vitals (ILI9488; needs Arduino_GFX)
+#                                              #   -> or ./extras/scripts/display.sh, which
+#                                              #      installs Arduino_GFX for you first
+#   ./extras/scripts/upload.sh next --monitor  # upload via probe, then open the UART console
+#   ./extras/scripts/upload.sh next --serial   # use USB serial / UF2 instead of the probe
+#   ./extras/scripts/upload.sh next --serial --port /dev/cu.usbmodem1101
 #
 # Env overrides:
 #   PROGRAMMER  CMSIS-DAP upload method id   (default picoprobe_cmsis_dap)
@@ -51,7 +54,7 @@ while [[ $# -gt 0 ]]; do
     --probe|--swd)     METHOD="probe" ;;
     --port|-p)         PORT="${2:-}"; METHOD="serial"; shift ;;
     --monitor|-m)      MONITOR=1 ;;
-    -h|--help)         grep '^#' "$0" | sed 's/^#\{1,2\} \{0,1\}//'; exit 0 ;;
+    -h|--help)         grep '^#' "$0" | grep -v '^#!' | sed 's/^#\{1,2\} \{0,1\}//'; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; exit 2 ;;
   esac
   shift
@@ -124,7 +127,7 @@ if [[ "$METHOD" == "probe" ]]; then
     echo "ERROR: SWD upload failed. Check that:" >&2
     echo "  - the Debug Probe is plugged into this host (USB), and" >&2
     echo "  - its SWD cable is on the board's SWCLK/GND/SWDIO, and the board is powered." >&2
-    echo "  - or fall back to USB:  ./extras/extras/scripts/upload.sh $TARGET --serial" >&2
+    echo "  - or fall back to USB:  ./extras/scripts/upload.sh $TARGET --serial" >&2
     exit 1
   fi
   echo ">> Flashed and reset via the Debug Probe."
