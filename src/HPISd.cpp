@@ -59,7 +59,10 @@ extern "C" void hpi_rec_stop(void)  { s_req = SD_REQ_STOP; }
 
 static bool sd_mount(void)
 {
-  if (s_mounted) return true;
+  if (s_mounted) {
+    Serial1.printf("SD_MOUNT: already mounted\r\n");
+    return true;
+  }
 
   SPI1.setSCK(HPI_PIN_SPI1_SCK);
   SPI1.setTX(HPI_PIN_SPI1_MOSI);
@@ -67,11 +70,32 @@ static bool sd_mount(void)
 
   SDFSConfig cfg(HPI_PIN_SD_CS, HPI_SD_SPI_HZ, SPI1);
   SDFS.setConfig(cfg);
+
+  Serial1.printf("SD_MOUNT: calling SDFS.begin()\r\n");
+
+  uint32_t t0 = millis();
+
   if (!SDFS.begin()) {
+    Serial1.printf("SD_MOUNT: SDFS.begin() FAILED after %lu ms\r\n",
+                   (unsigned long)(millis() - t0));
     s_card = false;
+    s_mounted = false;
     return false;
   }
-  s_card = s_mounted = true;
+
+  Serial1.printf("SD_MOUNT: SDFS.begin() OK after %lu ms\r\n",
+                 (unsigned long)(millis() - t0));
+
+  // Removed: FSInfo info(); SDFS.info(info) — this call can trigger a full
+  // free-cluster scan (walk the entire FAT) on cards whose FSInfo sector
+  // isn't trusted, costing multiple seconds proportional to card size.
+  // It's diagnostic-only; do it later off the recording-start critical
+  // path if you still want it (e.g. in the 1 Hz instr task, or a one-shot
+  // background task after do_start() returns).
+
+  s_mounted = true;
+  s_card = true;
+
   return true;
 }
 
@@ -89,18 +113,48 @@ static void do_start(void)
 {
   if (s_recording) return;
 
+  Serial1.printf("SD_REC: do_start() called\r\n");
+
   hpi_spi1_lock();
-  if (!sd_mount()) { hpi_spi1_unlock(); return; }
+  if (!sd_mount()) {
+    Serial1.printf("SD_REC: sd_mount() failed, aborting start\r\n");
+    hpi_spi1_unlock();
+    s_recording = false;
+    return;
+  }
 
   char path[20];
   for (int i = 1; i <= 99999; i++) {
     snprintf(path, sizeof(path), "/REC%05d.BIN", i);
     if (!SDFS.exists(path)) break;
-    if (i == 99999) { hpi_spi1_unlock(); return; }   /* card full of REC files */
+    if (i == 99999) {
+      Serial1.printf("SD_REC: card full of REC files\r\n");
+      hpi_spi1_unlock();
+      s_recording = false;
+      return;
+    }
   }
+  Serial1.printf("SD_REC: opening %s\r\n", path);
 
   s_file = SDFS.open(path, "w");
-  if (!s_file) { hpi_spi1_unlock(); return; }
+  if (!s_file) {
+    Serial1.printf("SD_REC: SDFS.open(%s) FAILED, retrying after re-mount\r\n", path);
+    SDFS.end();
+    s_mounted = false;
+    s_card = false;
+    delay(50);                 // let the card settle
+    if (sd_mount()) {
+      s_file = SDFS.open(path, "w");
+    }
+    if (!s_file) {
+      Serial1.printf("SD_REC: retry also FAILED\r\n");
+      hpi_spi1_unlock();
+      s_recording = false;
+      return;
+    }
+    Serial1.printf("SD_REC: retry succeeded\r\n");
+  }
+  Serial1.printf("SD_REC: file opened OK\r\n");
 
   sd_file_hdr_t hdr;
   memset(&hdr, 0, sizeof(hdr));
