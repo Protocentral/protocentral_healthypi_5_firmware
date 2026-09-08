@@ -10,6 +10,8 @@
 #   ./extras/extras/scripts/build.sh raw             # only RawProcessing  (DSP in loop())
 #   ./extras/extras/scripts/build.sh openview        # only 08_OpenView_Stream (single-core tutorials)
 #   ./extras/extras/scripts/build.sh display         # only HealthyPi5_Display (needs lvgl + Arduino_GFX)
+#   ./extras/extras/scripts/build.sh display         # only HealthyPi5_Display
+#                                                    # (needs lvgl + Arduino_GFX + extras/lv_conf.h)
 #   ./extras/extras/scripts/build.sh tutorials        # all Tutorials/ Serial-Plotter sketches
 #   ./extras/extras/scripts/build.sh ecg|resp|ppg|spo2|hr|temp|vitals|wireless  # one Tutorials sketch
 #   ./extras/extras/scripts/build.sh next --upload   # build + upload (set PORT=/dev/cu.usbmodemXXXX)

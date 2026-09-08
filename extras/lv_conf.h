@@ -6,9 +6,17 @@
  * library folder — a copy inside the sketch folder is not found. So install it
  * with:
  *
+
  *     cp extras/lv_conf.h "$(arduino-cli config get directories.user)/libraries/"
  *
  * extras/scripts/display-test.sh and the display CI job both do this for you.
+ *     arduino-cli lib install "lvgl@9.3.0"
+ *     arduino-cli lib install "GFX Library for Arduino"
+ *     cp extras/lv_conf.h "$(arduino-cli config get directories.user)/libraries/"
+ *
+ * The display CI job in .github/workflows/compile-examples.yml does exactly
+ * this; extras/scripts/build.sh display checks for the file and tells you the
+ * command if it is missing.
  *
  * Minimal-override style: only the macros this UI depends on are set and
  * lv_conf_internal.h supplies every other default.
