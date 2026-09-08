@@ -9,7 +9,6 @@
 #   ./extras/extras/scripts/build.sh next            # only HealthyPi5_NEXT  (FreeRTOS spine)
 #   ./extras/extras/scripts/build.sh raw             # only RawProcessing  (DSP in loop())
 #   ./extras/extras/scripts/build.sh openview        # only 08_OpenView_Stream (single-core tutorials)
-#   ./extras/extras/scripts/build.sh display         # only HealthyPi5_Display (needs lvgl + Arduino_GFX)
 #   ./extras/extras/scripts/build.sh display         # only HealthyPi5_Display
 #                                                    # (needs lvgl + Arduino_GFX + extras/lv_conf.h)
 #   ./extras/extras/scripts/build.sh tutorials        # all Tutorials/ Serial-Plotter sketches
@@ -122,12 +121,10 @@ case "$TARGET" in
     # folder — LVGL resolves its config as "../../lv_conf.h" from lvgl/src/, so
     # a copy in the sketch folder is not found. Deliberately excluded from
     # 'all' so the normal build does not depend on them.
-    # extras/scripts/display-test.sh installs all three for you.
     SB="$(arduino-cli config get directories.user 2>/dev/null || echo "$HOME/Documents/Arduino")"
     if [[ ! -f "$SB/libraries/lv_conf.h" ]]; then
       echo "ERROR: $SB/libraries/lv_conf.h not found — LVGL will not configure." >&2
       echo "       cp $ROOT/extras/lv_conf.h $SB/libraries/" >&2
-      echo "       (or just run ./extras/scripts/display-test.sh)" >&2
       exit 1
     fi
     build_one HealthyPi5_Display "$ROOT/examples/Applications/HealthyPi5_Display" "$FQBN_BASE:os=freertos"
