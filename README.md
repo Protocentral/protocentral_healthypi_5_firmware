@@ -92,10 +92,11 @@ all of them — see [`docs/PIN_MAP.md`](docs/PIN_MAP.md).
 
 | Folder | What it is |
 |---|---|
-| [`libraries/HealthyPi5/`](libraries/HealthyPi5) | The runtime library: the canonical **`board.h`** pin map **and** the dual-core NEXT spine (acquisition, broker, OpenView, HealthyBridge, SD, watchdog). |
+| [`src/`](src) | The runtime library: the canonical **`board.h`** pin map **and** the dual-core NEXT spine (acquisition, broker, OpenView, HealthyBridge, SD, watchdog). The repo root is the library (Arduino 1.5 format: `library.properties` + `src/`). |
 | [`examples/Tutorials/`](examples/Tutorials) | **11 standalone sketches** (01–11), one signal/idea at a time, for the Serial Plotter/Monitor, OpenView 2, wireless, and SD logging. Start here to learn the board. |
-| [`examples/Applications/`](examples/Applications) | The full dual-core NEXT firmware (headless). |
-| [`scripts/`](scripts) | `install-core.sh`, `build.sh`, `upload.sh` — one-command setup, compile, and flash (see [Command-line workflow](#command-line-workflow-scripts)). |
+| [`examples/Applications/`](examples/Applications) | The full dual-core NEXT firmware — headless, and with the on-panel LVGL display. |
+| [`extras/scripts/`](extras/scripts) | `install-core.sh`, `build.sh`, `upload.sh` — one-command setup, compile, and flash (see [Command-line workflow](#command-line-workflow-extrascripts)). |
+| [`extras/lv_conf.h`](extras/lv_conf.h) | LVGL v9 configuration for `HealthyPi5_Display`. Must be copied next to your installed `lvgl` folder — see that sketch's row below. |
 | [`extras/docs/`](extras/docs) | Pin map and the two-chip wireless model. See [Documentation](#documentation). |
 
 ## Getting started (Arduino IDE)
@@ -108,9 +109,12 @@ all of them — see [`docs/PIN_MAP.md`](docs/PIN_MAP.md).
    - **ProtoCentral AFE4490 PPG and SpO2 boards library** — provides the AFE4400
      driver **and** the SpO₂ algorithm (the board's PPG AFE is an **AFE4400**, not
      a MAX3010x)
-3. **Install the `HealthyPi5` library.** Copy [`libraries/HealthyPi5/`](libraries/HealthyPi5)
-   into your Arduino libraries folder (e.g. `~/Documents/Arduino/libraries/`). It
-   provides the canonical `board.h` every sketch uses.
+3. **Install the `ProtoCentral HealthyPi 5` library.** Easiest is **Library
+   Manager** (Tools → Manage Libraries → search "HealthyPi 5"). To use this
+   checkout instead, copy the **repo root** into your Arduino libraries folder as
+   `ProtoCentral_HealthyPi_5/` — the root *is* the library (Arduino 1.5 format:
+   `library.properties` + [`src/`](src)). It provides the canonical `board.h`
+   every sketch uses.
 4. **Open a sketch** from `examples/` — e.g.
    [`examples/Tutorials/01_ECG_Plotter`](examples/Tutorials/01_ECG_Plotter) — and
    click **Upload**.
@@ -120,12 +124,12 @@ all of them — see [`docs/PIN_MAP.md`](docs/PIN_MAP.md).
    at **115200 baud** for the teaching sketches; use **OpenView 2** for the
    multi-channel binary stream.
 
-> Prefer the command line? See [Command-line workflow](#command-line-workflow-scripts)
+> Prefer the command line? See [Command-line workflow](#command-line-workflow-extrascripts)
 > at the end — it also flashes over the Raspberry Pi Debug Probe.
 
 ## The `HealthyPi5` library
 
-`libraries/HealthyPi5/` plays two roles:
+[`src/`](src) plays two roles:
 
 - **`board.h`** — the single source of truth for pins (rev 5.2–5.7). Every sketch
   includes it via the `HPI_PIN_*` macros, so no GPIO is ever hardcoded. The 9
@@ -171,12 +175,29 @@ and tips.
 
 ## Application firmware (`examples/Applications/`)
 
-The complete headless firmware, a thin sketch over the `HealthyPi5` library.
-Needs **os: FreeRTOS SMP**.
+Full firmware, each a thin sketch over the `HealthyPi5` library.
+Both need **os: FreeRTOS SMP**.
 
 | Sketch | What it does |
 |---|---|
 | [`HealthyPi5_NEXT`](examples/Applications/HealthyPi5_NEXT) | The full headless firmware: lossless dual-core acquisition, OpenView 2 over USB-CDC, host command plane, config persistence, SD recording, I²C temp/battery, and the HealthyBridge link to the ESP32-C3. 1 Hz `HPI_INSTR` telemetry + hardware watchdog. |
+| [`HealthyPi5_Display`](examples/Applications/HealthyPi5_Display) | Everything `HealthyPi5_NEXT` does, plus the **on-panel UI** on the 480×320 SPI LCD: live HR / SpO₂ / respiration / temperature cards and a hold-**OK** record button, drawn with LVGL 9 on its own core0 task. |
+
+`HealthyPi5_Display` needs two libraries that are **not** in `library.properties`,
+plus an LVGL config file:
+
+```bash
+arduino-cli lib install "lvgl@9.3.0"
+arduino-cli lib install "GFX Library for Arduino"
+cp extras/lv_conf.h "$(arduino-cli config get directories.user)/libraries/"
+```
+
+`lv_conf.h` has to sit **next to** the `lvgl` folder, not in the sketch folder:
+LVGL resolves its config as `../../lv_conf.h` relative to `lvgl/src/` and will
+not find a copy anywhere else. The LCD shares SPI1 with the SD card, so any
+sketch driving it must hold `HealthyPi5.hpiSpi1Lock()` around **everything**
+that touches the peripheral — `SPI1.begin()` and the pin mux as well as
+transfers.
 
 ## Wireless (BLE / Wi-Fi)
 
@@ -212,26 +233,32 @@ in v2.0.0, and the v1 sketch is preserved on the
 [`v1-legacy`](https://github.com/Protocentral/protocentral_healthypi_5_firmware/tree/v1-legacy)
 tag.
 
-## Command-line workflow (`scripts/`)
+## Command-line workflow (`extras/scripts/`)
 
 For CI, batch builds, or flashing over the Raspberry Pi Debug Probe, the repo
 ships three scripts (need [`arduino-cli`](https://arduino.github.io/arduino-cli/)):
 
 | Script | Purpose |
 |---|---|
-| `./scripts/install-core.sh` | Register + install the arduino-pico core and the ProtoCentral sensor libraries. Idempotent. |
-| `./scripts/build.sh <target>` | Compile one target (or `all` / `tutorials`) against the in-repo library. |
-| `./scripts/upload.sh <target>` | Build + flash. Default programmer is the **Raspberry Pi Debug Probe** (SWD); `--serial` falls back to USB/UF2, `--monitor` opens the UART console. |
+| `./extras/scripts/install-core.sh` | Register + install the arduino-pico core and the ProtoCentral sensor libraries. Idempotent. |
+| `./extras/scripts/build.sh <target>` | Compile one target (or `all` / `tutorials`) against the in-repo library. |
+| `./extras/scripts/upload.sh <target>` | Build + flash. Default programmer is the **Raspberry Pi Debug Probe** (SWD); `--serial` falls back to USB/UF2, `--monitor` opens the UART console. |
 
 ```bash
-./scripts/install-core.sh                 # one-time setup
-./scripts/upload.sh ecg --monitor         # teaching: ECG on the Serial Plotter/Monitor
-./scripts/upload.sh next                  # HealthyPi5_NEXT (OpenView 2 + wireless + SD)
+./extras/scripts/install-core.sh          # one-time setup
+./extras/scripts/upload.sh ecg --monitor  # teaching: ECG on the Serial Plotter/Monitor
+./extras/scripts/upload.sh next           # HealthyPi5_NEXT (OpenView 2 + wireless + SD)
+./extras/scripts/upload.sh display        # HealthyPi5_Display (on-panel LVGL UI)
 ```
 
-**Targets:** `next` · `openview` · `raw` · `datalog` ·
+**Targets:** `next` · `display` · `openview` · `raw` · `datalog` ·
 `ecg` `resp` `ppg` `spo2` `hr` `temp` `vitals` `wireless` · `tutorials` (all
 standalone tutorial sketches) · `all`.
+
+`all` builds `next`, `raw` and `openview` only. `display` is deliberately
+excluded so a normal build never depends on LVGL and Arduino_GFX, and
+`tutorials` and `datalog` are their own targets — to match what CI compiles,
+run `build.sh all && build.sh tutorials && build.sh datalog && build.sh display`.
 
 ## Documentation
 
