@@ -288,7 +288,7 @@ bool HealthyPi5Class::begin(HPIEngine engine)
    * transactions are clean whether or not a card is ever mounted. */
   pinMode(HPI_PIN_SD_CS, OUTPUT);
   digitalWrite(HPI_PIN_SD_CS, HIGH);
-  
+
   hpi_ring_init();                       /* MUST precede core1 touching it      */
 
   /* ---- bring the SPINE up first, before any (possibly slow) sink/peripheral

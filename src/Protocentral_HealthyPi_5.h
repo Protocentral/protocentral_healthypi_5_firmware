@@ -154,6 +154,7 @@ public:
   void        recordStop();             /* close the current REC file          */
   bool        recording() const;        /* true while a file is open           */
   bool        sdCardPresent() const;    /* true once a card has been mounted   */
+
   /* HealthyBridge link to the ESP32-C3 (A9): stream biosignals + vitals (+
    * battery) over UART1 (Serial2, RTS/CTS @921600) as byte-identical
    * HealthyBridge frames, so the existing ESP32-C3 firmware just works. Call
@@ -167,12 +168,15 @@ public:
   void        enableSensors();
 
   /* SPI1 is shared with the on-board SD card via an internal mutex. Any
-   * sketch-level SPI1 peripheral (e.g. a display) MUST wrap its transactions
-   * in this lock, or it will race with SD writes and corrupt both. Safe to
-   * call before or after begin(). */
+   * sketch-level SPI1 peripheral (e.g. a display) MUST hold this lock around
+   * everything that touches the peripheral — SPI1.begin() and the pin mux as
+   * well as transfers — or it will race with SD I/O and corrupt both.
+   * Call only AFTER begin(): the mutex is created there, and until then both
+   * functions are silent no-ops that provide no mutual exclusion at all. */
   void hpiSpi1Lock();
   void hpiSpi1Unlock();
-  
+
+
   /* Temperature / battery store (written by the I2C poll, read by the sinks). */
   int16_t     temperature_x100() const { return _temp_x100; }
   bool        temperaturePresent() const { return _tempPresent; }

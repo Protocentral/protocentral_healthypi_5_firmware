@@ -9,6 +9,7 @@
 #   ./extras/extras/scripts/build.sh next            # only HealthyPi5_NEXT  (FreeRTOS spine)
 #   ./extras/extras/scripts/build.sh raw             # only RawProcessing  (DSP in loop())
 #   ./extras/extras/scripts/build.sh openview        # only 08_OpenView_Stream (single-core tutorials)
+#   ./extras/extras/scripts/build.sh display         # only HealthyPi5_Display (needs lvgl + Arduino_GFX)
 #   ./extras/extras/scripts/build.sh tutorials        # all Tutorials/ Serial-Plotter sketches
 #   ./extras/extras/scripts/build.sh ecg|resp|ppg|spo2|hr|temp|vitals|wireless  # one Tutorials sketch
 #   ./extras/extras/scripts/build.sh next --upload   # build + upload (set PORT=/dev/cu.usbmodemXXXX)
@@ -53,7 +54,7 @@ TARGET="all"
 UPLOAD=0
 for arg in "$@"; do
   case "$arg" in
-    next|raw|openview|datalog|all) TARGET="$arg" ;;
+    next|raw|openview|datalog|display|all) TARGET="$arg" ;;
     ecg|ppg|spo2|resp|hr|temp|vitals|wireless|tutorials) TARGET="$arg" ;;
     --upload|-u)                              UPLOAD=1 ;;
     *) echo "Unknown argument: $arg" >&2; exit 2 ;;
@@ -112,6 +113,22 @@ case "$TARGET" in
     ;;
   datalog)
     build_one SD_Datalog     "$ROOT/examples/Tutorials/11_SD_Datalog"      "$FQBN_BASE:os=freertos"
+    ;;
+  display)
+    # Needs two libraries the repo does not declare in library.properties
+    # (lvgl 9.x and Arduino_GFX), plus extras/lv_conf.h copied NEXT TO the lvgl
+    # folder — LVGL resolves its config as "../../lv_conf.h" from lvgl/src/, so
+    # a copy in the sketch folder is not found. Deliberately excluded from
+    # 'all' so the normal build does not depend on them.
+    # extras/scripts/display-test.sh installs all three for you.
+    SB="$(arduino-cli config get directories.user 2>/dev/null || echo "$HOME/Documents/Arduino")"
+    if [[ ! -f "$SB/libraries/lv_conf.h" ]]; then
+      echo "ERROR: $SB/libraries/lv_conf.h not found — LVGL will not configure." >&2
+      echo "       cp $ROOT/extras/lv_conf.h $SB/libraries/" >&2
+      echo "       (or just run ./extras/scripts/display-test.sh)" >&2
+      exit 1
+    fi
+    build_one HealthyPi5_Display "$ROOT/examples/Applications/HealthyPi5_Display" "$FQBN_BASE:os=freertos"
     ;;
   ecg)    build_one ECG_Plotter  "$ROOT/examples/Tutorials/01_ECG_Plotter"          "$FQBN_BASE" ;;
   resp)   build_one Respiration  "$ROOT/examples/Tutorials/02_Respiration_Plotter"  "$FQBN_BASE" ;;
