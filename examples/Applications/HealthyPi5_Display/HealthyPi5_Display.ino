@@ -13,17 +13,21 @@ Arduino_GFX     *gfx  = nullptr;
 
 static void init_gfx_bus()
 {
+  
   SPI1.setSCK(HPI_PIN_SPI1_SCK);
   SPI1.setTX(HPI_PIN_SPI1_MOSI);   // MOSI
- // SPI1.setRX(HPI_PIN_SPI1_MISO);
-
+  SPI1.setRX(HPI_PIN_SPI1_MISO);
+  SPI1.begin();
  /* Explicit hardware reset, timed to match the known-working reference
-   * driver, instead of trusting Arduino_GFX's internal reset pulse inside
-   * gfx->begin() (whose return value we've confirmed doesn't verify comms). */
-  // pinMode(HPI_PIN_LCD_RST, OUTPUT);
-  // digitalWrite(HPI_PIN_LCD_RST, HIGH); delay(5);
-  // digitalWrite(HPI_PIN_LCD_RST, LOW);  delay(20);
-  // digitalWrite(HPI_PIN_LCD_RST, HIGH); delay(150);
+   * driver. Do this ourselves rather than relying on Arduino_GFX's internal
+   * reset pulse inside gfx->begin() — that pulse isn't guaranteed to fully
+   * resync the controller on a warm restart. */
+  HealthyPi5.hpiSpi1Lock();
+  pinMode(HPI_PIN_LCD_RST, OUTPUT);
+  digitalWrite(HPI_PIN_LCD_RST, HIGH); delay(5);
+  digitalWrite(HPI_PIN_LCD_RST, LOW);  delay(20);
+  digitalWrite(HPI_PIN_LCD_RST, HIGH); delay(150);
+  HealthyPi5.hpiSpi1Unlock();
 
   bus = new Arduino_HWSPI(HPI_PIN_LCD_DC, HPI_PIN_LCD_CS, &SPI1, true);
 
@@ -57,9 +61,9 @@ static void flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map)
   int32_t w = area->x2 - area->x1 + 1;
   int32_t h = area->y2 - area->y1 + 1;
   HealthyPi5.hpiSpi1Lock();
-  SPI1.beginTransaction(SPISettings(HPI_LCD_SPI_HZ, MSBFIRST, SPI_MODE0));
+  //SPI1.beginTransaction(SPISettings(HPI_LCD_SPI_HZ, MSBFIRST, SPI_MODE0));
   gfx->draw16bitRGBBitmap(area->x1, area->y1, (uint16_t *)px_map, w, h);
-  SPI1.endTransaction();
+ // SPI1.endTransaction();
   HealthyPi5.hpiSpi1Unlock();
   lv_display_flush_ready(disp);
 }
@@ -77,7 +81,7 @@ static lv_group_t *s_group;
 static lv_style_t s_focus_style;
 static lv_obj_t  *s_rec_btn, *s_rec_btn_lbl, *s_rec_chip, *s_rec_chip_lbl;
 static lv_obj_t  *s_sd_chip, *s_sd_chip_lbl;
-static int        s_rec_shown = -1;
+static void refresh_status_ui(void);
 
 static void make_card(int idx, int col, int row, const char *title, lv_color_t accent)
 {
@@ -104,23 +108,6 @@ static void make_card(int idx, int col, int row, const char *title, lv_color_t a
   lv_obj_set_style_text_align(val, LV_TEXT_ALIGN_CENTER, 0);
   lv_obj_align(val, LV_ALIGN_CENTER, 0, 6);
   s_val[idx] = val;
-}
-
-static void update_rec_ui(bool recording)
-{
-  if (recording) {
-    lv_label_set_text(s_rec_chip_lbl, "REC");
-    lv_obj_set_style_bg_color(s_rec_chip, ACCENT_HR, 0);
-    lv_obj_set_style_text_color(s_rec_chip_lbl, lv_color_white(), 0);
-    lv_label_set_text(s_rec_btn_lbl, "Hold OK to STOP");
-    lv_obj_set_style_bg_color(s_rec_btn, lv_color_hex(0x7F1D1D), 0);
-  } else {
-    lv_label_set_text(s_rec_chip_lbl, "IDLE");
-    lv_obj_set_style_bg_color(s_rec_chip, lv_color_hex(0x2A2F37), 0);
-    lv_obj_set_style_text_color(s_rec_chip_lbl, lv_color_hex(0x9AA0A6), 0);
-    lv_label_set_text(s_rec_btn_lbl, "Hold OK to RECORD");
-    lv_obj_set_style_bg_color(s_rec_btn, lv_color_hex(0x1C222A), 0);
-  }
 }
 
 static void rec_btn_long_press_cb(lv_event_t *e)
@@ -185,8 +172,8 @@ static void build_ui(void)
   lv_obj_center(s_rec_btn_lbl);
   lv_group_add_obj(s_group, s_rec_btn);
 
-  s_rec_shown = HealthyPi5.recording() ? 1 : 0;
-  update_rec_ui(s_rec_shown != 0);
+  refresh_status_ui();
+
 }
 
 static void keys_init(void)
@@ -228,25 +215,51 @@ static void set_val(int idx, int32_t val, bool is_temp)
   }
 }
 
-static void update_sd_ui(void)
-{
-  static int shown = -1;
-  bool present = HealthyPi5.sdCardPresent();
-  int cur = present ? 1 : 0;
-  if (cur == shown) return;
-  shown = cur;
+static int s_status_shown = -1;   // 0=idle, 1=recording, 2=no-sd
 
-  if (present) {
-    lv_label_set_text(s_sd_chip_lbl, "SD OK");
-    lv_obj_set_style_bg_color(s_sd_chip, lv_color_hex(0x2A2F37), 0);
-    lv_obj_set_style_text_color(s_sd_chip_lbl, lv_color_hex(0x9AA0A6), 0);
-  } else {
+static void refresh_status_ui(void)
+{
+  bool card = HealthyPi5.sdCardPresent();
+  bool rec  = HealthyPi5.recording();
+  int state = !card ? 2 : (rec ? 1 : 0);
+  if (state == s_status_shown) return;
+  s_status_shown = state;
+
+  if (!card) {
     lv_label_set_text(s_sd_chip_lbl, "NO SD");
     lv_obj_set_style_bg_color(s_sd_chip, ACCENT_TEMP, 0);
     lv_obj_set_style_text_color(s_sd_chip_lbl, lv_color_white(), 0);
+
+    lv_label_set_text(s_rec_chip_lbl, "IDLE");
+    lv_obj_set_style_bg_color(s_rec_chip, lv_color_hex(0x2A2F37), 0);
+    lv_obj_set_style_text_color(s_rec_chip_lbl, lv_color_hex(0x9AA0A6), 0);
+
+    lv_label_set_text(s_rec_btn_lbl, "No SD card - insert, then hold OK");
+    lv_obj_set_style_bg_color(s_rec_btn, lv_color_hex(0x7A5A12), 0);
+  } else if (rec) {
+    lv_label_set_text(s_sd_chip_lbl, "SD OK");
+    lv_obj_set_style_bg_color(s_sd_chip, lv_color_hex(0x2A2F37), 0);
+    lv_obj_set_style_text_color(s_sd_chip_lbl, lv_color_hex(0x9AA0A6), 0);
+
+    lv_label_set_text(s_rec_chip_lbl, "REC");
+    lv_obj_set_style_bg_color(s_rec_chip, ACCENT_HR, 0);
+    lv_obj_set_style_text_color(s_rec_chip_lbl, lv_color_white(), 0);
+
+    lv_label_set_text(s_rec_btn_lbl, "Hold OK to STOP");
+    lv_obj_set_style_bg_color(s_rec_btn, lv_color_hex(0x7F1D1D), 0);
+  } else {
+    lv_label_set_text(s_sd_chip_lbl, "SD OK");
+    lv_obj_set_style_bg_color(s_sd_chip, lv_color_hex(0x2A2F37), 0);
+    lv_obj_set_style_text_color(s_sd_chip_lbl, lv_color_hex(0x9AA0A6), 0);
+
+    lv_label_set_text(s_rec_chip_lbl, "IDLE");
+    lv_obj_set_style_bg_color(s_rec_chip, lv_color_hex(0x2A2F37), 0);
+    lv_obj_set_style_text_color(s_rec_chip_lbl, lv_color_hex(0x9AA0A6), 0);
+
+    lv_label_set_text(s_rec_btn_lbl, "Hold OK to RECORD");
+    lv_obj_set_style_bg_color(s_rec_btn, lv_color_hex(0x1C222A), 0);
   }
 }
-
 static void update_ui(void)
 {
   const hpi_vitals_t &v = HealthyPi5.vitals();
@@ -263,17 +276,18 @@ void display_task(void *arg)
   (void)arg;
 
   init_gfx_bus();
-  
+
   pinMode(HPI_PIN_LCD_BACKLIGHT, OUTPUT);
-  digitalWrite(HPI_PIN_LCD_BACKLIGHT, HIGH);
-  Serial1.printf("HPI_DISP start (backlight on)\r\n");
+  digitalWrite(HPI_PIN_LCD_BACKLIGHT, LOW);   // keep backlight OFF until GRAM is cleared
+  Serial1.printf("HPI_DISP start (backlight off, clearing GRAM)\r\n");
 
   HealthyPi5.hpiSpi1Lock();
   gfx->begin(HPI_LCD_SPI_HZ);
   gfx->invertDisplay(true);
+  gfx->fillScreen(0x000000);
   HealthyPi5.hpiSpi1Unlock();
   lcd_backlight(true);
-  Serial1.printf("HPI_DISP panel init done\r\n");
+  Serial1.printf("HPI_DISP panel init done, backlight on\r\n");
 
   lv_init();
   lv_tick_set_cb(tick_cb);
@@ -301,12 +315,13 @@ void display_task(void *arg)
   uint32_t last_update = 0;
   uint32_t last_full_refresh = 0;
   for (;;) {
-    bool rec = HealthyPi5.recording();
-    if ((rec ? 1 : 0) != s_rec_shown) {
-      s_rec_shown = rec ? 1 : 0;
-      update_rec_ui(rec);
-    }
-    update_sd_ui();
+    // bool rec = HealthyPi5.recording();
+    // if ((rec ? 1 : 0) != s_rec_shown) {
+    //   s_rec_shown = rec ? 1 : 0;
+    //   update_rec_ui(rec);
+    // }
+    // update_sd_ui();
+        refresh_status_ui();
 
     uint32_t now = tick_cb();
     if (now - last_update >= 1000) {
