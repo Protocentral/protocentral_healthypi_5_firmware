@@ -9,8 +9,9 @@
 #   ./extras/extras/scripts/build.sh next            # only HealthyPi5_NEXT  (FreeRTOS spine)
 #   ./extras/extras/scripts/build.sh raw             # only RawProcessing  (DSP in loop())
 #   ./extras/extras/scripts/build.sh openview        # only 08_OpenView_Stream (single-core tutorials)
-#   ./extras/extras/scripts/build.sh display         # only HealthyPi5_Display
-#                                                    # (needs lvgl + Arduino_GFX + extras/lv_conf.h)
+#   ./extras/extras/scripts/build.sh display         # only HealthyPi5_Display, ILI9488 panel
+#   ./extras/extras/scripts/build.sh display-st7796  # ditto, ST7796 panel
+#                                                    # (need lvgl + Arduino_GFX + extras/lv_conf.h)
 #   ./extras/extras/scripts/build.sh tutorials        # all Tutorials/ Serial-Plotter sketches
 #   ./extras/extras/scripts/build.sh ecg|resp|ppg|spo2|hr|temp|vitals|wireless  # one Tutorials sketch
 #   ./extras/extras/scripts/build.sh next --upload   # build + upload (set PORT=/dev/cu.usbmodemXXXX)
@@ -55,7 +56,7 @@ TARGET="all"
 UPLOAD=0
 for arg in "$@"; do
   case "$arg" in
-    next|raw|openview|datalog|display|all) TARGET="$arg" ;;
+    next|raw|openview|datalog|display|display-st7796|all) TARGET="$arg" ;;
     ecg|ppg|spo2|resp|hr|temp|vitals|wireless|tutorials) TARGET="$arg" ;;
     --upload|-u)                              UPLOAD=1 ;;
     *) echo "Unknown argument: $arg" >&2; exit 2 ;;
@@ -115,7 +116,7 @@ case "$TARGET" in
   datalog)
     build_one SD_Datalog     "$ROOT/examples/Tutorials/11_SD_Datalog"      "$FQBN_BASE:os=freertos"
     ;;
-  display)
+  display|display-st7796)
     # Needs two libraries the repo does not declare in library.properties
     # (lvgl 9.x and Arduino_GFX), plus extras/lv_conf.h copied NEXT TO the lvgl
     # folder — LVGL resolves its config as "../../lv_conf.h" from lvgl/src/, so
@@ -127,7 +128,15 @@ case "$TARGET" in
       echo "       cp $ROOT/extras/lv_conf.h $SB/libraries/" >&2
       exit 1
     fi
-    build_one HealthyPi5_Display "$ROOT/examples/Applications/HealthyPi5_Display" "$FQBN_BASE:os=freertos"
+    # The panel driver is chosen at compile time; there is no runtime probe, so
+    # the two controllers are two separate binaries (see .github/workflows/release.yml).
+    if [[ "$TARGET" == "display-st7796" ]]; then
+      build_one HealthyPi5_Display_ST7796 "$ROOT/examples/Applications/HealthyPi5_Display" \
+                "$FQBN_BASE:os=freertos" "-DHPI_DISPLAY_ST7796"
+    else
+      build_one HealthyPi5_Display "$ROOT/examples/Applications/HealthyPi5_Display" \
+                "$FQBN_BASE:os=freertos"
+    fi
     ;;
   ecg)    build_one ECG_Plotter  "$ROOT/examples/Tutorials/01_ECG_Plotter"          "$FQBN_BASE" ;;
   resp)   build_one Respiration  "$ROOT/examples/Tutorials/02_Respiration_Plotter"  "$FQBN_BASE" ;;

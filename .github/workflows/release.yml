@@ -1,8 +1,17 @@
 name: Release Firmware
 
-# Builds the HealthyPi5_NEXT application firmware and attaches its UF2 to the
-# release for the pushed tag. The UF2 is the artifact an end user actually wants:
-# hold BOOTSEL, plug the board in, drag the file onto the RPI-RP2 volume.
+# Builds the application firmwares and attaches their UF2s to the release for
+# the pushed tag. A UF2 is the artifact an end user actually wants: hold BOOTSEL,
+# plug the board in, drag the file onto the RPI-RP2 volume.
+#
+# Three assets:
+#   HealthyPi5_NEXT-<tag>.uf2             headless
+#   HealthyPi5_Display-ILI9488-<tag>.uf2  headless + on-panel LVGL UI
+#   HealthyPi5_Display-ST7796-<tag>.uf2   ditto, for boards with an ST7796 panel
+#
+# The display sketch picks its driver at compile time and there is no runtime
+# probe, so the panel controller cannot be guessed from one binary -- hence one
+# asset per controller rather than shipping a coin flip.
 #
 # The tutorials are teaching sketches and are deliberately NOT released as
 # binaries -- they are meant to be read and compiled. Compile coverage for them
@@ -11,19 +20,18 @@ on:
   push:
     tags:
       - "v*"
-  workflow_dispatch: # build + upload the artifact only; publishes nothing
+  workflow_dispatch: # build + upload the artifacts only; publishes nothing
 
 permissions:
-  contents: write # required to create the release and upload the asset
+  contents: write # required to create the release and upload the assets
 
 env:
   FQBN: rp2040:rp2040:rpipico:os=freertos
-  SKETCH: examples/Applications/HealthyPi5_NEXT
   PICO_INDEX: https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
 
 jobs:
   firmware:
-    name: Build HealthyPi5_NEXT UF2
+    name: Build application UF2s
     runs-on: ubuntu-latest
 
     steps:
@@ -40,58 +48,94 @@ jobs:
           arduino-cli core update-index
           arduino-cli core install rp2040:rp2040
 
-      - name: Install sensor libraries
+      - name: Install libraries
         run: |
           # Mirrors extras/scripts/install-core.sh. MAX30001 is pinned because
           # HPIAcq.cpp targets its v2.0.0 polling API.
           arduino-cli lib install "ProtoCentral MAX30001@2.0.0"
           arduino-cli lib install "ProtoCentral AFE4490 PPG and SpO2 boards library"
+          # Display-only extras, not declared in library.properties. lvgl is
+          # pinned to 9.x: the sketch uses the v9 API (lv_display_create /
+          # lv_screen_active), which v8 does not have.
+          arduino-cli lib install "lvgl@9.3.0"
+          arduino-cli lib install "GFX Library for Arduino"
+
+      - name: Install lv_conf.h next to the lvgl folder
+        run: |
+          # LVGL resolves its config as "../../lv_conf.h" relative to lvgl/src/,
+          # so it MUST sit beside the library folder -- a copy in the sketch
+          # folder is never found. Without it the build fails on the Montserrat
+          # 28/48 fonts, which are off in LVGL's defaults.
+          LIBDIR="$(arduino-cli config get directories.user)/libraries"
+          cp "$GITHUB_WORKSPACE/extras/lv_conf.h" "$LIBDIR/lv_conf.h"
+          test -f "$LIBDIR/lv_conf.h"
 
       - name: Compile
-        run: |
-          # The repo root is the library (1.5 format), so point --library at it
-          # rather than installing a second copy from the index.
-          arduino-cli compile \
-            --fqbn "$FQBN" \
-            --library "$GITHUB_WORKSPACE" \
-            --output-dir "$GITHUB_WORKSPACE/dist" \
-            --warnings default \
-            "$SKETCH"
-
-      - name: Name the artifact after the tag
         id: pkg
         run: |
-          src="$GITHUB_WORKSPACE/dist/HealthyPi5_NEXT.ino.uf2"
-          if [[ ! -f "$src" ]]; then
-            echo "::error::no UF2 produced at $src"
-            ls -la "$GITHUB_WORKSPACE/dist" || true
-            exit 1
-          fi
+          set -euo pipefail
           # github.ref_name is the tag on a tag push, the branch on a dispatch.
-          name="HealthyPi5_NEXT-${GITHUB_REF_NAME}.uf2"
-          mv "$src" "$GITHUB_WORKSPACE/dist/$name"
-          echo "uf2=dist/$name" >> "$GITHUB_OUTPUT"
-          echo "name=$name" >> "$GITHUB_OUTPUT"
+          TAG="${GITHUB_REF_NAME}"
+          mkdir -p "$GITHUB_WORKSPACE/dist"
 
-      - name: Upload build artifact
+          # $1 = sketch dir, $2 = asset basename, $3 = extra compiler flags
+          build () {
+            local sketch="$1" base="$2" flags="${3:-}"
+            local out="$GITHUB_WORKSPACE/out/$base"
+            echo "::group::$base"
+            # The repo root is the library (1.5 format), so point --library at
+            # it rather than installing a second copy from the index.
+            if [ -n "$flags" ]; then
+              arduino-cli compile --fqbn "$FQBN" --library "$GITHUB_WORKSPACE" \
+                --output-dir "$out" --warnings default \
+                --build-property "compiler.cpp.extra_flags=$flags" "$sketch"
+            else
+              arduino-cli compile --fqbn "$FQBN" --library "$GITHUB_WORKSPACE" \
+                --output-dir "$out" --warnings default "$sketch"
+            fi
+            local src
+            src="$(ls "$out"/*.ino.uf2)"
+            [ -f "$src" ] || { echo "::error::no UF2 produced for $base"; exit 1; }
+            mv "$src" "$GITHUB_WORKSPACE/dist/$base-$TAG.uf2"
+            echo "::endgroup::"
+          }
+
+          build examples/Applications/HealthyPi5_NEXT    HealthyPi5_NEXT
+          build examples/Applications/HealthyPi5_Display HealthyPi5_Display-ILI9488
+          build examples/Applications/HealthyPi5_Display HealthyPi5_Display-ST7796 -DHPI_DISPLAY_ST7796
+
+          ls -la "$GITHUB_WORKSPACE/dist"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.pkg.outputs.name }}
-          path: ${{ steps.pkg.outputs.uf2 }}
+          name: healthypi5-firmware-${{ steps.pkg.outputs.tag }}
+          path: dist/*.uf2
           if-no-files-found: error
 
-      - name: Attach the UF2 to the release
+      - name: Attach the UF2s to the release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ steps.pkg.outputs.uf2 }}
+          files: dist/*.uf2
           fail_on_unmatched_files: true
           body: |
-            RP2040 application firmware for the HealthyPi 5, built from `${{ env.SKETCH }}`
-            with FQBN `${{ env.FQBN }}`.
+            RP2040 application firmware for the HealthyPi 5, built with FQBN
+            `${{ env.FQBN }}`.
 
-            **Flashing:** hold **BOOTSEL**, plug the board into USB, and copy
-            `${{ steps.pkg.outputs.name }}` onto the `RPI-RP2` volume that appears.
+            **Flashing:** hold **BOOTSEL**, plug the board into USB, and copy the
+            `.uf2` onto the `RPI-RP2` volume that appears.
+
+            | Asset | Use it for |
+            |---|---|
+            | `HealthyPi5_NEXT-${{ steps.pkg.outputs.tag }}.uf2` | Headless. Acquisition, OpenView 2 over USB-CDC, host command plane, SD recording, HealthyBridge. Nothing is drawn on the panel. |
+            | `HealthyPi5_Display-ILI9488-${{ steps.pkg.outputs.tag }}.uf2` | Everything above **plus** the on-panel UI, for boards with an **ILI9488** LCD. |
+            | `HealthyPi5_Display-ST7796-${{ steps.pkg.outputs.tag }}.uf2` | The same, for boards with an **ST7796** LCD. |
+
+            The display sketch selects its panel driver at compile time and does
+            not probe for it, so there is one asset per controller. If the UI
+            does not appear, try the other one before assuming a hardware fault.
 
             > **The ESP32-C3 co-processor firmware must be updated to match.**
             > BLE / Wi-Fi run on the ESP32-C3, not the RP2040, and this firmware

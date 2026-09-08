@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.1.1
+
+- Release: ship prebuilt display firmware. `v2.1.0` attached only
+  `HealthyPi5_NEXT-<tag>.uf2`, which contains no display code at all, so anyone
+  flashing the released binary got a blank panel. The release now carries three
+  UF2s — headless, and `HealthyPi5_Display` for each panel controller:
+  `HealthyPi5_Display-ILI9488-<tag>.uf2` and
+  `HealthyPi5_Display-ST7796-<tag>.uf2`. The sketch selects its driver at
+  compile time and never probes for it, so one binary cannot serve both.
+- `build.sh` and `upload.sh` gain a `display-st7796` target, so the ST7796
+  asset is reproducible locally. No library or sketch code changed in this
+  release.
+
 ## 2.1.0
 
 - New application example **`HealthyPi5_Display`**: the on-panel UI on the
