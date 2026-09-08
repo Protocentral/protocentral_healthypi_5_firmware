@@ -189,6 +189,9 @@ void SdSink::begin()
   /* Deliberately do NOT mount here: a missing/slow card makes SdFat retry for
    * seconds, which would lengthen first-boot bring-up. The card is mounted
    * lazily on the first REC_START (do_start -> sd_mount). */
+  hpi_spi1_lock();
+  sd_mount();
+  hpi_spi1_unlock();
 }
 
 void SdSink::consume(const hpi_sample_t &s)
