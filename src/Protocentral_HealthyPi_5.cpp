@@ -167,6 +167,7 @@ void HealthyPi5Class::recordSD()
 void HealthyPi5Class::recordStart()      { hpi_rec_start(); }
 void HealthyPi5Class::recordStop()       { hpi_rec_stop(); }
 bool HealthyPi5Class::recording() const  { return hpi_sd_recording(); }
+bool HealthyPi5Class::sdCardPresent() const { return hpi_sd_card_present(); }
 
 void HealthyPi5Class::enableBridge()
 {
@@ -180,6 +181,9 @@ void HealthyPi5Class::enableSensors()
   _sensorsEnabled = true;
   if (_started) hpi_i2c_init();
 }
+
+void HealthyPi5Class::hpiSpi1Lock()   { hpi_spi1_lock(); }
+void HealthyPi5Class::hpiSpi1Unlock() { hpi_spi1_unlock(); }
 
 void HealthyPi5Class::setTemperature(int16_t x100, bool present)
 {
@@ -274,6 +278,17 @@ bool HealthyPi5Class::begin(HPIEngine engine)
     _dbg->printf("HPI_TEMP sensor=%s\r\n", hpi_temp_sensor_name()); /* QWIIC temp */
   }
   hpi_spi1_bus_init();                    /* SD SPI1 bus mutex                   */
+  /* Deselect the SD card deterministically, up front. SdSink defers SDFS.begin()
+   * (and the pinMode/CS-high it implies) until the first REC_START, so before
+   * that HPI_PIN_SD_CS sits in the post-reset floating-input state. With no card
+   * inserted this net floats and picks up crosstalk from SCK/MOSI (driven hard
+   * for the LCD), which can corrupt the ILI9488/ST7796 init sequence sent from
+   * gfx->begin() in display_task -- hence "SD in -> works, SD out -> blank
+   * screen, backlight still on." Drive it HIGH here so the LCD's SPI1
+   * transactions are clean whether or not a card is ever mounted. */
+  pinMode(HPI_PIN_SD_CS, OUTPUT);
+  digitalWrite(HPI_PIN_SD_CS, HIGH);
+
   hpi_ring_init();                       /* MUST precede core1 touching it      */
 
   /* ---- bring the SPINE up first, before any (possibly slow) sink/peripheral

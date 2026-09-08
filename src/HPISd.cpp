@@ -67,11 +67,19 @@ static bool sd_mount(void)
 
   SDFSConfig cfg(HPI_PIN_SD_CS, HPI_SD_SPI_HZ, SPI1);
   SDFS.setConfig(cfg);
+
   if (!SDFS.begin()) {
-    s_card = false;
+    s_card    = false;
+    s_mounted = false;
     return false;
   }
-  s_card = s_mounted = true;
+
+  /* Deliberately no SDFS.info() here: on a card whose FSInfo sector isn't
+   * trusted it triggers a full free-cluster scan (walking the entire FAT),
+   * costing seconds proportional to card size — and this runs on the
+   * recording-start path. It is diagnostic-only; do it elsewhere if wanted. */
+  s_mounted = true;
+  s_card    = true;
   return true;
 }
 
@@ -100,7 +108,16 @@ static void do_start(void)
   }
 
   s_file = SDFS.open(path, "w");
-  if (!s_file) { hpi_spi1_unlock(); return; }
+  if (!s_file) {
+    /* A card mounted at boot can have been swapped or gone idle since; one
+     * remount-and-retry recovers it without needing a reboot. */
+    SDFS.end();
+    s_mounted = false;
+    s_card    = false;
+    delay(50);                 /* let the card settle */
+    if (sd_mount()) s_file = SDFS.open(path, "w");
+    if (!s_file) { hpi_spi1_unlock(); return; }
+  }
 
   sd_file_hdr_t hdr;
   memset(&hdr, 0, sizeof(hdr));
@@ -132,9 +149,15 @@ static void do_stop(void)
 
 void SdSink::begin()
 {
-  /* Deliberately do NOT mount here: a missing/slow card makes SdFat retry for
-   * seconds, which would lengthen first-boot bring-up. The card is mounted
-   * lazily on the first REC_START (do_start -> sd_mount). */
+  /* Mount once here so hpi_sd_card_present() is meaningful before the first
+   * REC_START — the display example shows card state on boot. The cost: with
+   * no card, SdFat retries for its init timeout on this task while holding the
+   * SPI1 mutex, delaying the first transaction of any other SPI1 user (the
+   * LCD). That is bounded and happens once, which is why it lives here rather
+   * than on the recording-start path. */
+  hpi_spi1_lock();
+  sd_mount();
+  hpi_spi1_unlock();
 }
 
 void SdSink::consume(const hpi_sample_t &s)

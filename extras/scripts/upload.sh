@@ -17,6 +17,8 @@
 #   ./extras/extras/scripts/upload.sh openview        # 08_OpenView_Stream (single-core)
 #   ./extras/extras/scripts/upload.sh wireless        # 10_Wireless_Bridge (HealthyBridge/ESP32)
 #   ./extras/extras/scripts/upload.sh datalog         # 11_SD_Datalog (record waveforms to microSD)
+#   ./extras/extras/scripts/upload.sh display         # HealthyPi5_Display (LVGL panel UI;
+#                                                     #   needs lvgl + Arduino_GFX + extras/lv_conf.h)
 #   ./extras/extras/scripts/upload.sh next --monitor  # upload via probe, then open the UART console
 #   ./extras/extras/scripts/upload.sh next --serial   # use USB serial / UF2 instead of the probe
 #   ./extras/extras/scripts/upload.sh next --serial --port /dev/cu.usbmodem1101
@@ -45,7 +47,7 @@ METHOD="probe"        # probe (SWD, default) | serial (USB CDC / UF2)
 MONITOR=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    next|raw|openview|datalog)  TARGET="$1" ;;
+    next|raw|openview|datalog|display)  TARGET="$1" ;;
     ecg|resp|ppg|spo2|hr|temp|vitals|wireless) TARGET="$1" ;;
     --serial|--uf2)    METHOD="serial" ;;
     --probe|--swd)     METHOD="probe" ;;
@@ -63,6 +65,7 @@ case "$TARGET" in
   raw)        NAME="RawProcessing";       SKETCHDIR="Tutorials/09_RawProcessing";      OSOPT="os=freertos" ;;
   openview)   NAME="OpenView_Stream";     SKETCHDIR="Tutorials/08_OpenView_Stream";    OSOPT="" ;;
   datalog)    NAME="SD_Datalog";          SKETCHDIR="Tutorials/11_SD_Datalog";         OSOPT="os=freertos" ;;
+  display)    NAME="HealthyPi5_Display";  SKETCHDIR="Applications/HealthyPi5_Display"; OSOPT="os=freertos" ;;
   ecg)    NAME="ECG_Plotter"; SKETCHDIR="Tutorials/01_ECG_Plotter";         OSOPT="" ;;
   resp)   NAME="Respiration"; SKETCHDIR="Tutorials/02_Respiration_Plotter"; OSOPT="" ;;
   ppg)    NAME="PPG_Plotter"; SKETCHDIR="Tutorials/03_PPG_Plotter";         OSOPT="" ;;

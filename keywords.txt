@@ -24,8 +24,11 @@ recordSD	KEYWORD2
 recordStart	KEYWORD2
 recordStop	KEYWORD2
 recording	KEYWORD2
+sdCardPresent	KEYWORD2
 enableSensors	KEYWORD2
 enableBridge	KEYWORD2
+hpiSpi1Lock	KEYWORD2
+hpiSpi1Unlock	KEYWORD2
 enableLoopStream	KEYWORD2
 read	KEYWORD2
 available	KEYWORD2

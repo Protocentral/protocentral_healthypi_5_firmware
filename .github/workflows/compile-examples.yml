@@ -6,12 +6,14 @@ on:
       - "src/**"
       - "examples/**"
       - "library.properties"
+      - "extras/lv_conf.h"
       - ".github/workflows/compile-examples.yml"
   pull_request:
     paths:
       - "src/**"
       - "examples/**"
       - "library.properties"
+      - "extras/lv_conf.h"
       - ".github/workflows/compile-examples.yml"
   workflow_dispatch:
 
@@ -24,6 +26,12 @@ on:
 #     therefore also proves those guards still hold.
 #   * os=freertos         -- tutorials 09/11 and the HealthyPi5_NEXT application
 #     pull in <Protocentral_HealthyPi_5.h>, which #errors without __FREERTOS.
+#
+# HealthyPi5_Display is a third case and gets its own job below: it needs two
+# libraries this repo does not declare in library.properties (lvgl, Arduino_GFX)
+# AND an lv_conf.h that must be dropped NEXT TO the installed lvgl folder.
+# compile-sketches installs its libraries and compiles in a single step, leaving
+# nowhere to inject that file, so that job drives arduino-cli directly.
 #
 # Keep this split in sync with extras/scripts/build.sh, which uses the same FQBNs.
 jobs:
@@ -78,3 +86,57 @@ jobs:
           sketch-paths: ${{ matrix.tier.sketches }}
           enable-deltas-report: true
           enable-warnings-report: true
+
+  # HealthyPi5_Display -- LVGL + Arduino_GFX panel UI on the FreeRTOS spine.
+  display:
+    name: Raspberry Pi Pico (FreeRTOS SMP) — HealthyPi5_Display
+    runs-on: ubuntu-latest
+
+    env:
+      FQBN: rp2040:rp2040:rpipico:os=freertos
+      SKETCH: examples/Applications/HealthyPi5_Display
+      PICO_INDEX: https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install arduino-cli
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Install the arduino-pico core
+        run: |
+          arduino-cli config init
+          arduino-cli config add board_manager.additional_urls "$PICO_INDEX"
+          arduino-cli core update-index
+          arduino-cli core install rp2040:rp2040
+
+      - name: Install libraries
+        run: |
+          # Mirrors extras/scripts/install-core.sh; MAX30001 is pinned because
+          # HPIAcq.cpp targets its v2.0.0 polling API.
+          arduino-cli lib install "ProtoCentral MAX30001@2.0.0"
+          arduino-cli lib install "ProtoCentral AFE4490 PPG and SpO2 boards library"
+          # Display-only extras. lvgl is pinned to 9.x: the sketch uses the v9
+          # API (lv_display_create / lv_screen_active), which v8 does not have.
+          arduino-cli lib install "lvgl@9.3.0"
+          arduino-cli lib install "GFX Library for Arduino"
+
+      - name: Install lv_conf.h next to the lvgl folder
+        run: |
+          # LVGL resolves its config as "../../lv_conf.h" relative to lvgl/src/,
+          # so it MUST sit beside the library folder — a copy in the sketch
+          # folder is never found. Without it the build fails on the Montserrat
+          # 28/48 fonts, which are off in LVGL's defaults.
+          LIBDIR="$(arduino-cli config get directories.user)/libraries"
+          cp "$GITHUB_WORKSPACE/extras/lv_conf.h" "$LIBDIR/lv_conf.h"
+          test -f "$LIBDIR/lv_conf.h"
+
+      - name: Compile
+        run: |
+          # The repo root is the library (1.5 format), so point --library at it.
+          arduino-cli compile \
+            --fqbn "$FQBN" \
+            --library "$GITHUB_WORKSPACE" \
+            --warnings default \
+            "$SKETCH"
