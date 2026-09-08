@@ -14,6 +14,12 @@ Arduino_GFX     *gfx  = nullptr;
 static void init_gfx_bus()
 {
   
+  /* SPI1 is shared with the SD card, so EVERY touch of the peripheral — the
+   * pin mux and SPI1.begin() included, not just transfers — has to happen
+   * under the arbitration lock. SPI1.begin() calls beginTransaction(), which
+   * can spi_deinit()/spi_init() the block out from under an in-flight SD
+   * transaction if it runs unlocked. */
+  HealthyPi5.hpiSpi1Lock();
   SPI1.setSCK(HPI_PIN_SPI1_SCK);
   SPI1.setTX(HPI_PIN_SPI1_MOSI);   // MOSI
   SPI1.setRX(HPI_PIN_SPI1_MISO);
@@ -22,7 +28,6 @@ static void init_gfx_bus()
    * driver. Do this ourselves rather than relying on Arduino_GFX's internal
    * reset pulse inside gfx->begin() — that pulse isn't guaranteed to fully
    * resync the controller on a warm restart. */
-  HealthyPi5.hpiSpi1Lock();
   pinMode(HPI_PIN_LCD_RST, OUTPUT);
   digitalWrite(HPI_PIN_LCD_RST, HIGH); delay(5);
   digitalWrite(HPI_PIN_LCD_RST, LOW);  delay(20);
@@ -38,7 +43,6 @@ static void init_gfx_bus()
 #endif
 }
 
-//static uint8_t s_draw_buf[DISP_W * 24 * 2];
 static uint8_t s_draw_buf1[DISP_W * 12 * 2];
 static uint8_t s_draw_buf2[DISP_W * 12 * 2];
 
@@ -61,9 +65,7 @@ static void flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map)
   int32_t w = area->x2 - area->x1 + 1;
   int32_t h = area->y2 - area->y1 + 1;
   HealthyPi5.hpiSpi1Lock();
-  //SPI1.beginTransaction(SPISettings(HPI_LCD_SPI_HZ, MSBFIRST, SPI_MODE0));
   gfx->draw16bitRGBBitmap(area->x1, area->y1, (uint16_t *)px_map, w, h);
- // SPI1.endTransaction();
   HealthyPi5.hpiSpi1Unlock();
   lv_display_flush_ready(disp);
 }
@@ -173,7 +175,6 @@ static void build_ui(void)
   lv_group_add_obj(s_group, s_rec_btn);
 
   refresh_status_ui();
-
 }
 
 static void keys_init(void)
@@ -209,7 +210,11 @@ static void set_val(int idx, int32_t val, bool is_temp)
   if (val == INT32_MIN) {
     lv_label_set_text(s_val[idx], "--");
   } else if (is_temp) {
-    lv_label_set_text_fmt(s_val[idx], "%d.%d", (int)(val / 100), (int)((val / 10) % 10));
+    /* val is temperature x100. Split sign off first: a plain "%d.%d" on a
+     * negative value renders -1.5 C as "-1.-5". */
+    int32_t t = (val < 0) ? -val : val;
+    lv_label_set_text_fmt(s_val[idx], "%s%d.%d", (val < 0) ? "-" : "",
+                          (int)(t / 100), (int)((t / 10) % 10));
   } else {
     lv_label_set_text_fmt(s_val[idx], "%d", (int)val);
   }
@@ -282,7 +287,15 @@ void display_task(void *arg)
   Serial1.printf("HPI_DISP start (backlight off, clearing GRAM)\r\n");
 
   HealthyPi5.hpiSpi1Lock();
-  gfx->begin(HPI_LCD_SPI_HZ);
+  /* Arduino_GFX picks the bus data mode itself, and on this platform
+   * Arduino_HWSPI::begin() defaults to SPI_MODE2 (CPOL=1) — see the
+   * `#elif defined(SPI_HAS_TRANSACTION)` branch. Arduino_TFT only forwards a
+   * mode when the driver sets _override_datamode, which Arduino_ILI9488_18bit
+   * never does. Both the ILI9488 and the ST7796 want MODE0, so bring the bus
+   * up explicitly here and pass GFX_SKIP_DATABUS_BEGIN so Arduino_TFT::begin()
+   * does not re-run the databus begin and reset the mode back to MODE2. */
+  bus->begin(HPI_LCD_SPI_HZ, SPI_MODE0);
+  gfx->begin(GFX_SKIP_DATABUS_BEGIN);
   gfx->invertDisplay(true);
   gfx->fillScreen(0x000000);
   HealthyPi5.hpiSpi1Unlock();
@@ -295,8 +308,6 @@ void display_task(void *arg)
 
   lv_display_t *disp = lv_display_create(DISP_W, DISP_H);
   lv_display_set_flush_cb(disp, flush_cb);
-  // lv_display_set_buffers(disp, s_draw_buf, NULL, sizeof(s_draw_buf),
-  //                        LV_DISPLAY_RENDER_MODE_PARTIAL);
   lv_display_set_buffers(disp, s_draw_buf1, s_draw_buf2, sizeof(s_draw_buf1),
                        LV_DISPLAY_RENDER_MODE_PARTIAL);
   Serial1.printf("HPI_DISP buffers set\r\n");
@@ -313,15 +324,8 @@ void display_task(void *arg)
   lv_indev_set_long_press_time(enc, 700);
 
   uint32_t last_update = 0;
-  uint32_t last_full_refresh = 0;
   for (;;) {
-    // bool rec = HealthyPi5.recording();
-    // if ((rec ? 1 : 0) != s_rec_shown) {
-    //   s_rec_shown = rec ? 1 : 0;
-    //   update_rec_ui(rec);
-    // }
-    // update_sd_ui();
-        refresh_status_ui();
+    refresh_status_ui();
 
     uint32_t now = tick_cb();
     if (now - last_update >= 1000) {
@@ -329,19 +333,11 @@ void display_task(void *arg)
       update_ui();
     }
 
-    // if (now - last_full_refresh >= 30000) {
-    //   last_full_refresh = now;
-    //   lv_obj_invalidate(lv_screen_active());
-    // }
-
-    // uint32_t next = lv_timer_handler();
-    // if (next > 30) next = 30;
-    // if (next < 5)  next = 5;
-    // vTaskDelay(pdMS_TO_TICKS(next));
     lv_timer_handler();
 
-  // Run LVGL/display processing at approximately 5 Hz
-  vTaskDelay(pdMS_TO_TICKS(200));
+    /* ~5 Hz is ample for 1 Hz vitals and keeps the SPI1 lock free for the SD
+     * sink; the encoder is polled from lv_timer_handler at the same rate. */
+    vTaskDelay(pdMS_TO_TICKS(200));
   }
 }
 
