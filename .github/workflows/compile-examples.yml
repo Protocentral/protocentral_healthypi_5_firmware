@@ -37,7 +37,7 @@ on:
 jobs:
   build:
     name: ${{ matrix.tier.name }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     strategy:
       fail-fast: false
@@ -92,7 +92,7 @@ jobs:
   # HealthyPi5_Display -- LVGL + Arduino_GFX panel UI on the FreeRTOS spine.
   display:
     name: Raspberry Pi Pico (FreeRTOS SMP) — HealthyPi5_Display
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     env:
       FQBN: rp2040:rp2040:rpipico:os=freertos
