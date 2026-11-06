@@ -16,7 +16,7 @@
  *   Board    : "Raspberry Pi Pico"  (arduino-pico core)
  *   Sensors  : MAX30001 (SPI0), AFE4400 (SPI0), MAX30205 or AS6221 (I2C1/QWIIC)
  *   Link     : UART1 (Serial2) GP24 TX / GP25 RX / GP27 RTS / GP26 CTS @ 921600
- *   Libraries: "ProtoCentral MAX30001" v2.0.0+,
+ *   Libraries: "ProtoCentral MAX30001" v2.1.0+,
  *              "ProtoCentral AFE4490 PPG and SpO2 boards library"
  *   Also needs: the in-repo HealthyPi5 library, for board.h
  *   Output   : Tools > Serial Monitor @ 115200 shows what is being sent; the

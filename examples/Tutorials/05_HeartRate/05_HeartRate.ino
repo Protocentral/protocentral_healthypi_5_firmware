@@ -8,7 +8,7 @@
  *
  *   Board    : "Raspberry Pi Pico"  (arduino-pico core)
  *   Sensor   : MAX30001, on SPI0  (RtoR / heart-rate engine)
- *   Library  : "ProtoCentral MAX30001" v2.0.0+
+ *   Library  : "ProtoCentral MAX30001" v2.1.0+
  *   Also needs: the in-repo HealthyPi5 library, for board.h
  *   Output   : Arduino IDE  ->  Tools > Serial Monitor  @ 115200 baud
  *

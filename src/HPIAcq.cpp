@@ -53,12 +53,12 @@ void hpi_acq_init(void)
   g_c1_stage = 6;                                /* streaming configured      */
 }
 
-/* NOTE on the v2.0.0 MAX30001 library: getECGSample()/getBioZSample() read ONE
- * FIFO word per call and always report SUCCESS — they do NOT signal FIFO-empty.
- * So we must not "drain until empty" (that would loop forever); instead core1
- * is paced at exactly the 128 SPS ODR and reads exactly one ECG sample per
- * tick (BioZ every 2nd tick = 64 SPS). The micros() pace keeps us locked to the
- * sensor's output rate. */
+/* NOTE on the MAX30001 library: getECGSample()/getBioZSample() read ONE FIFO
+ * word per call. Since v2.1.0 they return MAX30001_ERROR_NOT_READY when the FIFO
+ * is empty (v2.0.0 always reported SUCCESS). core1 is paced at the 128 SPS ODR
+ * and reads one ECG sample per tick (BioZ every 2nd tick = 64 SPS); the micros()
+ * pace keeps us locked to the sensor's output rate. A tick that finds the FIFO
+ * empty simply produces no sample. */
 void hpi_acq_step(void)
 {
   static uint32_t cycle = 0;

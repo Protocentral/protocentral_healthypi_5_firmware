@@ -7,7 +7,7 @@
  *
  *   Board    : "Raspberry Pi Pico"  (Earle Philhower arduino-pico core)
  *   Sensor   : MAX30001 (single-lead ECG / BioZ / heart-rate), on SPI0
- *   Library  : "ProtoCentral MAX30001" v2.0.0+  (Library Manager)
+ *   Library  : "ProtoCentral MAX30001" v2.1.0+  (Library Manager)
  *   Also needs: the in-repo HealthyPi5 library, for board.h (the pin map)
  *   Output   : Arduino IDE 2.x  ->  Tools > Serial Plotter  @ 115200 baud
  *
@@ -53,9 +53,9 @@ void setup() {
 }
 
 void loop() {
-  // Pace the loop to the MAX30001's 128 SPS output rate. The v2.0.0 library
-  // returns ONE FIFO sample per getECGSample() call and does not signal "empty",
-  // so we read exactly one sample per output period instead of polling flat-out.
+  // Pace the loop to the MAX30001's 128 SPS output rate. The library returns
+  // ONE FIFO sample per getECGSample() call, so we read exactly one sample per
+  // output period instead of polling flat-out.
   static uint32_t next_us = micros();
   if ((int32_t)(micros() - next_us) < 0) return;
   next_us += HPI_ACQ_PERIOD_US;        // ~7813 us  (1 / 128 SPS)

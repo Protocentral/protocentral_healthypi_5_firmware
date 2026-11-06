@@ -52,7 +52,7 @@ to build the standalone set at once).
 1. **Board core:** install **arduino-pico** (Earle Philhower) and select
    **"Raspberry Pi Pico"**. (`../../scripts/install-core.sh` automates this.)
 2. **Sensor libraries** (Library Manager, or the install script):
-   - **ProtoCentral MAX30001** — v2.0.0 or newer (ECG/BioZ/heart-rate).
+   - **ProtoCentral MAX30001** — v2.1.0 or newer (ECG/BioZ/heart-rate).
    - **ProtoCentral AFE4490 PPG and SpO2 boards library** — this provides
      `protocentral_afe44xx.h` **and** the SpO2 algorithm. The HealthyPi 5's PPG
      AFE is an **AFE4400** (same family as the AFE4490) — **not** a MAX3010x.

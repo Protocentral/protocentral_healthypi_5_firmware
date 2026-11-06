@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.1.2
+
+- Heart rate now works. The firmware requires **ProtoCentral MAX30001 v2.1.0**,
+  the first release that turns on the chip's R-to-R detector. With v2.0.0 the
+  detector was never enabled, so HR was always 0 in OpenView, on the display
+  and over the wireless bridge. The prebuilt UF2s in this release are built
+  against v2.1.0.
+- ECG lead-off is now reported. MAX30001 v2.1.0 enables DC lead-off detection
+  (v2.0.0 always returned "leads on"), so the HR-valid flag and the bridge's
+  lead-off bit now reflect the electrodes.
+- MAX30001 v2.1.0 also changes the BioZ defaults (gain 10 V/V, high-pass
+  0.05 Hz instead of 0.5 Hz) so breathing is no longer filtered out; the
+  respiration waveform is larger and slower to settle after electrodes go on.
+- CI, the release workflow and `extras/scripts/install-core.sh` install MAX30001
+  from the `v2.1.0` git tag, so builds do not wait on Library Manager indexing.
+  `library.properties` now depends on `ProtoCentral MAX30001 (>=2.1.0)`.
+- No firmware code changed; only comments describing the MAX30001 FIFO
+  behaviour were updated.
+
 ## 2.1.1
 
 - Release: ship prebuilt display firmware. `v2.1.0` attached only

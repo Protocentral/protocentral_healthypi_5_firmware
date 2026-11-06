@@ -199,9 +199,9 @@ void loop()
     g_hr = (bpm == 0xFFFF || bpm > 300) ? 0 : (uint8_t)bpm;
   }
 
-  // 4) ECG/BioZ — paced at 128 SPS (the MAX30001 ODR). The v2.0.0 library
-  //    returns one FIFO word per call and never signals "empty", so we PACE
-  //    one read per sample period rather than draining a FIFO. One OpenView
+  // 4) ECG/BioZ — paced at 128 SPS (the MAX30001 ODR). The library returns
+  //    one FIFO word per call, so we PACE one read per sample period rather
+  //    than draining a FIFO; a read that finds it empty is skipped. One OpenView
   //    packet per ECG sample, only while OpenView has the port open (Serial is
   //    true when DTR is asserted on arduino-pico).
   static uint32_t next_ecg_us = micros();

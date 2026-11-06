@@ -34,12 +34,17 @@ arduino-cli core list | grep -i rp2040 || true
 
 echo
 echo ">> Installing ProtoCentral sensor libraries"
-# The MAX30001 v2.0.0 polling API (getECGSample/startECGBioZ) is what HPIAcq.cpp
-# targets — pin it. The AFE4490 library bundles BOTH protocentral_afe44xx.h and
-# Protocentral_spo2_algorithm.h, so no separate SpO2 library is needed.
+# MAX30001 v2.1.0 is the first release that enables the R-to-R (heart-rate)
+# detector — pin it. Try Library Manager first, then the git tag (new releases
+# can take a day to reach the Library Manager index). The AFE4490 library
+# bundles BOTH protocentral_afe44xx.h and Protocentral_spo2_algorithm.h, so no
+# separate SpO2 library is needed.
 # If a name drifts, run 'arduino-cli lib search protocentral' for the exact string.
-echo "   - ProtoCentral MAX30001@2.0.0"
-arduino-cli lib install "ProtoCentral MAX30001@2.0.0" || \
+echo "   - ProtoCentral MAX30001@2.1.0"
+arduino-cli lib install "ProtoCentral MAX30001@2.1.0" || {
+  arduino-cli config set library.enable_unsafe_install true &&
+  arduino-cli lib install --git-url "https://github.com/Protocentral/protocentral_max30001_arduino_library.git#v2.1.0"
+} || \
   echo "     (could not install — install it manually)"
 echo "   - ProtoCentral AFE4490 PPG and SpO2 boards library"
 arduino-cli lib install "ProtoCentral AFE4490 PPG and SpO2 boards library" || \

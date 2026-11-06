@@ -77,10 +77,12 @@ jobs:
           libraries: |
             - source-path: ./
             # library.properties `depends` is not auto-resolved by this action.
-            # MAX30001 is pinned: HPIAcq.cpp targets the v2.0.0 polling API
-            # (startECGBioZ / getECGSample), matching extras/scripts/install-core.sh.
-            - name: ProtoCentral MAX30001
-              version: 2.0.0
+            # MAX30001 is pinned to the v2.1.0 tag (first release with the R-to-R
+            # heart-rate detector enabled), matching extras/scripts/install-core.sh.
+            # Installed from git so the build does not wait on Library Manager
+            # indexing.
+            - source-url: https://github.com/Protocentral/protocentral_max30001_arduino_library.git
+              version: v2.1.0
             # Bundles both protocentral_afe44xx.h and the SpO2 algorithm.
             - name: ProtoCentral AFE4490 PPG and SpO2 boards library
           sketch-paths: ${{ matrix.tier.sketches }}
@@ -113,9 +115,11 @@ jobs:
 
       - name: Install libraries
         run: |
-          # Mirrors extras/scripts/install-core.sh; MAX30001 is pinned because
-          # HPIAcq.cpp targets its v2.0.0 polling API.
-          arduino-cli lib install "ProtoCentral MAX30001@2.0.0"
+          # Mirrors extras/scripts/install-core.sh. MAX30001 is pinned to the
+          # v2.1.0 tag (R-to-R heart rate), installed from git so the build does
+          # not wait on Library Manager indexing.
+          arduino-cli config set library.enable_unsafe_install true
+          arduino-cli lib install --git-url "https://github.com/Protocentral/protocentral_max30001_arduino_library.git#v2.1.0"
           arduino-cli lib install "ProtoCentral AFE4490 PPG and SpO2 boards library"
           # Display-only extras. lvgl is pinned to 9.x: the sketch uses the v9
           # API (lv_display_create / lv_screen_active), which v8 does not have.

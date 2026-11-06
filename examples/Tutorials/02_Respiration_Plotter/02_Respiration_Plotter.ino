@@ -8,7 +8,7 @@
  *
  *   Board    : "Raspberry Pi Pico"  (arduino-pico core)
  *   Sensor   : MAX30001 BioZ channel, on SPI0
- *   Library  : "ProtoCentral MAX30001" v2.0.0+
+ *   Library  : "ProtoCentral MAX30001" v2.1.0+
  *   Also needs: the in-repo HealthyPi5 library, for board.h
  *   Output   : Arduino IDE 2.x  ->  Tools > Serial Plotter  @ 115200 baud
  *

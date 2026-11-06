@@ -105,7 +105,7 @@ all of them — see [`docs/PIN_MAP.md`](docs/PIN_MAP.md).
    **[`arduino-pico`](https://github.com/earlephilhower/arduino-pico)** (Earle
    Philhower). Select board **"Raspberry Pi Pico"**.
 2. **Install the sensor libraries** (*Library Manager*):
-   - **ProtoCentral MAX30001** — v2.0.0 or newer (ECG / BioZ / heart rate)
+   - **ProtoCentral MAX30001** — v2.1.0 or newer (ECG / BioZ / heart rate)
    - **ProtoCentral AFE4490 PPG and SpO2 boards library** — provides the AFE4400
      driver **and** the SpO₂ algorithm (the board's PPG AFE is an **AFE4400**, not
      a MAX3010x)
